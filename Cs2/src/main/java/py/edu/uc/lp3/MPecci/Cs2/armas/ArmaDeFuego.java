@@ -1,4 +1,4 @@
-package armas;
+package py.edu.uc.lp3.MPecci.Cs2.armas;
 
 public abstract class ArmaDeFuego extends Arma {
     private int dano;

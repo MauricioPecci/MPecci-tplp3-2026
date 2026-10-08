@@ -1,4 +1,4 @@
-package armas;
+package py.edu.uc.lp3.MPecci.Cs2.armas;
 
 public class Francotirador extends Fusil {
     private double alcance;
