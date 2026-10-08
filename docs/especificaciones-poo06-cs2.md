@@ -90,7 +90,7 @@ Respuesta esperada del punto 5:
 
 ## 4. Enlace al commit de la solución
 
-`HASH_DEL_COMMIT_PENDIENTE`
+<https://github.com/MauricioPecci/MPecci-tplp3-2026/commit/d3f92d1ca1691087a2f1549638f32a6262a2d63e>
 
 ## 5. Recorrido de corrección (5 a 7 minutos)
 

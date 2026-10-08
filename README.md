@@ -257,6 +257,6 @@ Apache License 2.0. Ver [LICENSE](LICENSE).
 
 ## Commits de la solución
 
-- Enlace al commit de la solución: `PENDIENTE_DE_COMPLETAR_AL_PUBLICAR`
+- Enlace al commit de la solución: <https://github.com/MauricioPecci/MPecci-tplp3-2026/commit/d3f92d1ca1691087a2f1549638f32a6262a2d63e>
 - Bitácora de asistencia de IA: [BITACORA.md](BITACORA.md)
 - Especificaciones para el aula: [docs/especificaciones-poo06-cs2.md](docs/especificaciones-poo06-cs2.md)
