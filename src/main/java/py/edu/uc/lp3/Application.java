@@ -1,13 +1,13 @@
-package py.edu.uc.lp3.MPecci.Cs2;
+package py.edu.uc.lp3;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Cs2Application {
+public class Application {
 
 	public static void main(String[] args) {
-		SpringApplication.run(Cs2Application.class, args);
+		SpringApplication.run(Application.class, args);
 	}
 
 }
