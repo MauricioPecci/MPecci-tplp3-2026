@@ -15,6 +15,37 @@ public class Fusil extends ArmaDeFuego {
         this.silenciador = silenciador;
     }
 
+    public Fusil(String nombre, int id, double precio, int dano, int precision, double recarga, double velocidad,
+                 boolean automatica) {
+        this(nombre, id, precio, dano, precision, recarga, velocidad, automatica, 1, 0, false);
+    }
+
+    public int calcularDano() {
+        return getDano();
+    }
+
+    public int calcularDano(int distancia) {
+        return Math.max(1, getDano() - distancia / 10);
+    }
+
+    public int calcularDano(int distancia, boolean disparoCritico) {
+        int dano = calcularDano(distancia);
+        return disparoCritico ? dano * 2 : dano;
+    }
+
+    @Override
+    public String describir() {
+        return "Fusil[" + super.describir()
+                + ", dano=" + getDano()
+                + ", precision=" + getPrecision()
+                + ", recarga=" + getRecarga()
+                + ", velocidad=" + getVelocidad()
+                + ", automatica=" + automatica
+                + ", mira=" + mira
+                + ", retroceso=" + retroceso
+                + ", silenciador=" + silenciador + "]";
+    }
+
     public boolean isAutomatica() { return automatica; }
     public void setAutomatica(boolean automatica) { this.automatica = automatica; }
 

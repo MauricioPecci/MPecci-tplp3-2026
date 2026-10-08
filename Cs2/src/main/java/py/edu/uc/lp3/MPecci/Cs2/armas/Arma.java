@@ -19,4 +19,8 @@ public abstract class Arma {
 
     public double getPrecio() { return precio; }
     public void setPrecio(double precio) { this.precio = precio; }
+
+    public String describir() {
+        return "nombre=" + nombre + ", id=" + id + ", precio=" + precio;
+    }
 }
