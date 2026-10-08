@@ -1,4 +1,4 @@
-package py.edu.uc.lp3.MPecci.Cs2.armas;
+package py.edu.uc.lp3.domain;
 
 public class Humo extends Arrojadiza {
 
@@ -25,10 +25,6 @@ public class Humo extends Arrojadiza {
 
     @Override
     public String describir() {
-        return "Humo[" + super.describir()
-                + ", tipo=" + getTipo()
-                + ", radio=" + getRadio()
-                + ", distancia=" + getDistancia()
-                + ", duracion=" + getDuracion() + "]";
+        return "Humo[" + super.describir() + "]";
     }
 }

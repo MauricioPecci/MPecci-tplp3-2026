@@ -1,4 +1,4 @@
-package py.edu.uc.lp3.MPecci.Cs2.armas;
+package py.edu.uc.lp3.domain;
 
 public class Pistola extends ArmaDeFuego {
     private boolean automatica;
@@ -9,6 +9,13 @@ public class Pistola extends ArmaDeFuego {
         super(nombre, id, precio, dano, precision, recarga, velocidad);
         this.automatica = automatica;
         this.silenciador = silenciador;
+    }
+
+    @Override
+    public String describir() {
+        return "Pistola[" + super.describir()
+                + ", automatica=" + automatica
+                + ", silenciador=" + silenciador + "]";
     }
 
     public boolean isAutomatica() { return automatica; }

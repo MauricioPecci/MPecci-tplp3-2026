@@ -1,4 +1,4 @@
-package py.edu.uc.lp3.MPecci.Cs2.armas;
+package py.edu.uc.lp3.domain;
 
 public class Flash extends Arrojadiza {
     private int intensidad;
@@ -9,6 +9,13 @@ public class Flash extends Arrojadiza {
         super(nombre, id, precio, tipo, radio, distancia, duracion);
         this.intensidad = intensidad;
         this.duracionCeguera = duracionCeguera;
+    }
+
+    @Override
+    public String describir() {
+        return "Flash[" + super.describir()
+                + ", intensidad=" + intensidad
+                + ", duracionCeguera=" + duracionCeguera + "]";
     }
 
     public int getIntensidad() { return intensidad; }

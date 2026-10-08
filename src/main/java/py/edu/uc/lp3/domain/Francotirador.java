@@ -1,4 +1,4 @@
-package py.edu.uc.lp3.MPecci.Cs2.armas;
+package py.edu.uc.lp3.domain;
 
 public class Francotirador extends Fusil {
     private double alcance;
@@ -10,6 +10,13 @@ public class Francotirador extends Fusil {
         super(nombre, id, precio, dano, precision, recarga, velocidad, automatica, mira, retroceso, silenciador);
         this.alcance = alcance;
         this.zoom = zoom;
+    }
+
+    @Override
+    public String describir() {
+        return "Francotirador[" + super.describir()
+                + ", alcance=" + alcance
+                + ", zoom=" + zoom + "]";
     }
 
     public double getAlcance() { return alcance; }

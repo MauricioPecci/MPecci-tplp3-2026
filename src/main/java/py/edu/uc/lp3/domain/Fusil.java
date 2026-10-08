@@ -1,4 +1,6 @@
-package py.edu.uc.lp3.MPecci.Cs2.armas;
+package py.edu.uc.lp3.domain;
+
+import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 
 public class Fusil extends ArmaDeFuego {
     private boolean automatica;
@@ -10,8 +12,8 @@ public class Fusil extends ArmaDeFuego {
                  boolean automatica, int mira, int retroceso, boolean silenciador) {
         super(nombre, id, precio, dano, precision, recarga, velocidad);
         this.automatica = automatica;
-        this.mira = mira;
-        this.retroceso = retroceso;
+        setMira(mira);
+        setRetroceso(retroceso);
         this.silenciador = silenciador;
     }
 
@@ -25,6 +27,9 @@ public class Fusil extends ArmaDeFuego {
     }
 
     public int calcularDano(int distancia) {
+        if (distancia < 0) {
+            throw new ArmaInvalidaException("La distancia no puede ser negativa: " + distancia);
+        }
         return Math.max(1, getDano() - distancia / 10);
     }
 
@@ -36,10 +41,6 @@ public class Fusil extends ArmaDeFuego {
     @Override
     public String describir() {
         return "Fusil[" + super.describir()
-                + ", dano=" + getDano()
-                + ", precision=" + getPrecision()
-                + ", recarga=" + getRecarga()
-                + ", velocidad=" + getVelocidad()
                 + ", automatica=" + automatica
                 + ", mira=" + mira
                 + ", retroceso=" + retroceso
@@ -50,10 +51,22 @@ public class Fusil extends ArmaDeFuego {
     public void setAutomatica(boolean automatica) { this.automatica = automatica; }
 
     public int getMira() { return mira; }
-    public void setMira(int mira) { this.mira = mira; }
+
+    public void setMira(int mira) {
+        if (mira < 0) {
+            throw new ArmaInvalidaException("La mira no puede ser negativa: " + mira);
+        }
+        this.mira = mira;
+    }
 
     public int getRetroceso() { return retroceso; }
-    public void setRetroceso(int retroceso) { this.retroceso = retroceso; }
+
+    public void setRetroceso(int retroceso) {
+        if (retroceso < 0) {
+            throw new ArmaInvalidaException("El retroceso no puede ser negativo: " + retroceso);
+        }
+        this.retroceso = retroceso;
+    }
 
     public boolean isSilenciador() { return silenciador; }
     public void setSilenciador(boolean silenciador) { this.silenciador = silenciador; }

@@ -1,4 +1,4 @@
-package py.edu.uc.lp3.MPecci.Cs2.armas;
+package py.edu.uc.lp3.domain;
 
 public class Granada extends Arrojadiza {
     private int dano;
@@ -9,6 +9,13 @@ public class Granada extends Arrojadiza {
         super(nombre, id, precio, tipo, radio, distancia, duracion);
         this.dano = dano;
         this.aturdimiento = aturdimiento;
+    }
+
+    @Override
+    public String describir() {
+        return "Granada[" + super.describir()
+                + ", dano=" + dano
+                + ", aturdimiento=" + aturdimiento + "]";
     }
 
     public int getDano() { return dano; }
