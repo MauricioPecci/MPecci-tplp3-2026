@@ -79,6 +79,19 @@ class ArmaTest {
     }
 
     @Test
+    void laCapacidadEquipableSeComparteEntreFamiliasDistintas() {
+        Equipable fusil = new Fusil("AK-47", 1, 2700, 36, 71, 2.4, 600, true, 2, 3, false);
+        Equipable granada = new Granada("Granada HE", 5, 300, "explosiva", 4.0, 30.0, 1.0, 98, false);
+
+        assertThat(fusil).isInstanceOf(ArmaDeFuego.class);
+        assertThat(granada).isInstanceOf(Arrojadiza.class);
+        assertThat(fusil.ranura()).isEqualTo("primaria");
+        assertThat(granada.ranura()).isEqualTo("explosiva");
+        assertThat(fusil.mensajeDeEquipado()).isEqualTo("Se equipa en la ranura primaria.");
+        assertThat(granada.mensajeDeEquipado()).contains("tecla G");
+    }
+
+    @Test
     void laJerarquiaSostieneLaRelacionEsUn() {
         Arma francotirador = new Francotirador("AWP", 9, 4750, 115, 85, 3.7, 340,
                 false, 8, 5, true, 80.0, 4);

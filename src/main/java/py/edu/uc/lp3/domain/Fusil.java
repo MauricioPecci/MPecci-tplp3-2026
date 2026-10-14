@@ -2,7 +2,7 @@ package py.edu.uc.lp3.domain;
 
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 
-public class Fusil extends ArmaDeFuego {
+public class Fusil extends ArmaDeFuego implements Equipable {
     private boolean automatica;
     private int mira;
     private int retroceso;
@@ -36,6 +36,11 @@ public class Fusil extends ArmaDeFuego {
     public int calcularDano(int distancia, boolean disparoCritico) {
         int dano = calcularDano(distancia);
         return disparoCritico ? dano * 2 : dano;
+    }
+
+    @Override
+    public String ranura() {
+        return "primaria";
     }
 
     @Override

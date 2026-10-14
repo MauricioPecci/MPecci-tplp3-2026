@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import py.edu.uc.lp3.domain.Arma;
+import py.edu.uc.lp3.domain.Equipable;
 import py.edu.uc.lp3.domain.Fusil;
+import py.edu.uc.lp3.domain.Granada;
 import py.edu.uc.lp3.domain.Humo;
 
 @RestController
@@ -27,6 +29,24 @@ public class ArmaController {
                     item.put("clase", arma.getClass().getSimpleName());
                     item.put("heredaDe", Arma.class.getSimpleName());
                     item.put("descripcion", arma.describir());
+                    return item;
+                })
+                .toList();
+    }
+
+    @GetMapping("/equipables")
+    public List<Map<String, Object>> mensajeDeEquipadoATravesDeLaInterfaz() {
+        List<Equipable> equipables = List.of(
+                new Fusil("AK-47", 1, 2700, 36, 71, 2.4, 600, true, 2, 3, false),
+                new Granada("Granada HE", 5, 300, "explosiva", 4.0, 30.0, 1.0, 98, false));
+
+        return equipables.stream()
+                .map(equipable -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("clase", equipable.getClass().getSimpleName());
+                    item.put("tipoDeInterfaz", Equipable.class.getSimpleName());
+                    item.put("ranura", equipable.ranura());
+                    item.put("mensaje", equipable.mensajeDeEquipado());
                     return item;
                 })
                 .toList();

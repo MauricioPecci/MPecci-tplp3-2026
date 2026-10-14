@@ -16,6 +16,7 @@ public class IndexController {
                 "endpoints", List.of(
                         "GET /",
                         "GET /api/armas/descripcion",
+                        "GET /api/armas/equipables",
                         "GET /api/armas/fusil?nombre=AK-47&distancia=100&critico=true",
                         "GET /api/armas/humo?nombre=Humo de cortina&radio=6&radioExtra=2"));
     }

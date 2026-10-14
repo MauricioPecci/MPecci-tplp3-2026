@@ -50,3 +50,19 @@
      de sobrecarga/sobreescritura, `BITACORA.md` y
      `docs/especificaciones-poo06-cs2.md`;
    - publicar con commits separados y el enlace al commit de la solución.
+
+4. **"Elegí una capacidad que compartan dos clases y que esas 2 clases estén en
+   familias distintas; declarala como interface en domain con un mensaje que
+   devuelva texto. Cada clase la implementa a su modo, una de las dos puede
+   reemplazar un default. Un servicio REST pide ese mensaje a través del tipo de
+   la interfaz y responde JSON"** — incluyó:
+   - nueva interface `Equipable` en `domain` con el mensaje de texto
+     `mensajeDeEquipado()` y una implementación `default` sobre la primitiva
+     `ranura()`;
+   - `Fusil` (rama `ArmaDeFuego`) y `Granada` (rama `Arrojadiza`) implementan la
+     capacidad cada uno a su modo; `Fusil` usa el `default` y `Granada` lo
+     reemplaza (lanzamiento con la tecla G);
+   - endpoint `GET /api/armas/equipables` en `ArmaController` que declara
+     `List<Equipable>`, pide el mensaje por el tipo de la interfaz y responde
+     JSON;
+   - pruebas de dominio y de endpoint MockMvc para la nueva capacidad.

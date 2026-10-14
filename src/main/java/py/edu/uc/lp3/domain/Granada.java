@@ -1,6 +1,6 @@
 package py.edu.uc.lp3.domain;
 
-public class Granada extends Arrojadiza {
+public class Granada extends Arrojadiza implements Equipable {
     private int dano;
     private boolean aturdimiento;
 
@@ -9,6 +9,16 @@ public class Granada extends Arrojadiza {
         super(nombre, id, precio, tipo, radio, distancia, duracion);
         this.dano = dano;
         this.aturdimiento = aturdimiento;
+    }
+
+    @Override
+    public String ranura() {
+        return "explosiva";
+    }
+
+    @Override
+    public String mensajeDeEquipado() {
+        return "No se equipa: se lleva en la ranura explosiva y se lanza con la tecla G.";
     }
 
     @Override

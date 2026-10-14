@@ -47,6 +47,25 @@ curl http://localhost:8080/api/armas/descripcion
 ]
 ```
 
+### `GET /api/armas/equipables` — la capacidad de una interface entre familias
+
+Las dos ramas (`ArmaDeFuego` y `Arrojadiza`) comparten la capacidad `Equipable`:
+un `Fusil` (rama de fuego) y una `Granada` (rama arrojadiza) la implementan cada
+uno a su modo. El controller los trata como `Equipable` (el tipo de la interfaz)
+y devuelve el texto de `mensajeDeEquipado()`; `Fusil` usa el `default` de la
+interfaz y `Granada` lo reemplaza:
+
+```bash
+curl http://localhost:8080/api/armas/equipables
+```
+
+```json
+[
+  {"clase":"Fusil","tipoDeInterfaz":"Equipable","ranura":"primaria","mensaje":"Se equipa en la ranura primaria."},
+  {"clase":"Granada","tipoDeInterfaz":"Equipable","ranura":"explosiva","mensaje":"No se equipa: se lleva en la ranura explosiva y se lanza con la tecla G."}
+]
+```
+
 ### `GET /api/armas/fusil` — construye desde la URL
 
 Los parámetros alimentan un **constructor simple** (sin accesorios) o el
@@ -93,6 +112,11 @@ entrada HTTP en `rest.controller` y `Application` solo arranca:
 ```mermaid
 classDiagram
     direction LR
+    class Equipable {
+        <<interface>>
+        +ranura()* String
+        +mensajeDeEquipado() String
+    }
     class Arma {
         <<abstract>>
         -String nombre
@@ -165,6 +189,8 @@ classDiagram
     Arrojadiza <|-- Humo
     Arrojadiza <|-- Granada
     Arrojadiza <|-- Flash
+    Equipable <|.. Fusil
+    Equipable <|.. Granada
 ```
 
 ```mermaid

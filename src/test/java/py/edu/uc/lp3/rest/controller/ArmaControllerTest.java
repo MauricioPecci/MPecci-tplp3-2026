@@ -38,6 +38,17 @@ class ArmaControllerTest {
     }
 
     @Test
+    void elMensajeDeLaInterfazSePideATravesDelTipoEquipable() throws Exception {
+        mockMvc.perform(get("/api/armas/equipables"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].tipoDeInterfaz").value("Equipable"))
+                .andExpect(jsonPath("$[0].clase").value("Fusil"))
+                .andExpect(jsonPath("$[0].mensaje").value("Se equipa en la ranura primaria."))
+                .andExpect(jsonPath("$[1].clase").value("Granada"))
+                .andExpect(jsonPath("$[1].mensaje").value(containsString("tecla G")));
+    }
+
+    @Test
     void elFusilSeConstruyeDesdeLaUrlYSobrecargaCalcularDano() throws Exception {
         mockMvc.perform(get("/api/armas/fusil")
                         .param("nombre", "AK-47")
