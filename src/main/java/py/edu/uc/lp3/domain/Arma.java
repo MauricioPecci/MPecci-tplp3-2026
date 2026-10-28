@@ -2,7 +2,7 @@ package py.edu.uc.lp3.domain;
 
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 
-public abstract class Arma {
+public abstract class Arma implements UIcapable {
     private String nombre;
     private int id;
     private double precio;
@@ -41,4 +41,14 @@ public abstract class Arma {
     }
 
     public abstract String describir();
+
+    @Override
+    public String imagen() {
+        return "recursos/imagenes/" + getClass().getSimpleName().toLowerCase() + ".png";
+    }
+
+    @Override
+    public String sonido() {
+        return "recursos/sonidos/" + getClass().getSimpleName().toLowerCase() + ".mp3";
+    }
 }

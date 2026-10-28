@@ -6,6 +6,16 @@
 - **Modelo de LLM exacto:** `big-pickle` (ID del modelo provisto por la
   herramienta: `opencode/big-pickle`)
 
+## Cambios realizados ahora
+
+5. **"Necesito un CRUD rest para la clase \"Arma\" que siga la arquitectura de 3 capas,tenga una capa de negocios con alguna validación (service) y persista en una base de datos H2 con spring data"**
+  - Añadida configuración H2/JPA en `src/main/resources/application.properties` (memoria H2, consola habilitada, ddl-auto=update).
+  - Creada entidad JPA `py.edu.uc.lp3.entity.ArmaEntity` con `@Entity`, `@Id` autogenerado y campos `nombre`, `precio`, `tipo`.
+  - Creado repositorio `py.edu.uc.lp3.repository.ArmaRepository` extendiendo `JpaRepository<ArmaEntity, Long>`.
+  - Creado servicio `py.edu.uc.lp3.service.ArmaService` con lógica de negocio y validaciones (nombre/tipo no vacíos, precio >= 0, id > 0, existencia en update/delete).
+  - Creado controlador REST `py.edu.uc.lp3.rest.controller.arma.ArmaCrudController` con endpoints CRUD en `/api/armas-crud` (GET, GET/{id}, POST, PUT/{id}, DELETE/{id}) retornando `ResponseEntity`.
+  - Compilación y tests ejecutados con `./mvnw test` - BUILD SUCCESS (20 tests).
+
 ## Resumen de los prompts
 
 1. **"Arreglar la configuración de paquetes y hacer el código ejecutable; luego, añadir sobrecarga y sobreescritura a las clases Fusil y Humo."**
@@ -66,3 +76,14 @@
      `List<Equipable>`, pide el mensaje por el tipo de la interfaz y responde
      JSON;
    - pruebas de dominio y de endpoint MockMvc para la nueva capacidad.
+
+5. **"Agregar a todas las clases la característica UIcapable con imagen y
+   sonido"** — incluyó:
+   - nueva interface `UIcapable` en `domain` con `imagen()` y `sonido()`;
+   - `Arma` la implementa en la raíz, de modo que **todas** las clases
+     (`Fusil`, `Escopeta`, `Pistola`, `Francotirador`, `Humo`, `Granada`,
+     `Flash`) heredan la característica con recursos derivados del nombre de la
+     clase;
+   - endpoint `GET /api/armas/ui` en `ArmaController` que lista las clases como
+     `UIcapable` y responde la imagen y el sonido en JSON;
+   - pruebas de dominio (todas las clases son `UIcapable`) y de endpoint.

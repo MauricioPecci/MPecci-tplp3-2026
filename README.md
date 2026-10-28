@@ -66,6 +66,25 @@ curl http://localhost:8080/api/armas/equipables
 ]
 ```
 
+### `GET /api/armas/ui` — imagen y sonido de todas las clases
+
+Todas las armas heredan `UIcapable` desde la raíz `Arma`, así que cualquier
+instancia (abstracta o concreta) sabe con qué imagen y sonido mostrarse en una
+interfaz. El controller lista las clases concretas como `UIcapable` y responde
+JSON:
+
+```bash
+curl http://localhost:8080/api/armas/ui
+```
+
+```json
+[
+  {"clase":"Fusil","imagen":"recursos/imagenes/fusil.png","sonido":"recursos/sonidos/fusil.mp3"},
+  {"clase":"Escopeta","imagen":"recursos/imagenes/escopeta.png","sonido":"recursos/sonidos/escopeta.mp3"},
+  "..."
+]
+```
+
 ### `GET /api/armas/fusil` — construye desde la URL
 
 Los parámetros alimentan un **constructor simple** (sin accesorios) o el
@@ -116,6 +135,11 @@ classDiagram
         <<interface>>
         +ranura()* String
         +mensajeDeEquipado() String
+    }
+    class UIcapable {
+        <<interface>>
+        +imagen() String
+        +sonido() String
     }
     class Arma {
         <<abstract>>
@@ -191,6 +215,7 @@ classDiagram
     Arrojadiza <|-- Flash
     Equipable <|.. Fusil
     Equipable <|.. Granada
+    UIcapable <|.. Arma
 ```
 
 ```mermaid

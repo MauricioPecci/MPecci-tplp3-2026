@@ -3,6 +3,8 @@ package py.edu.uc.lp3.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 
@@ -89,6 +91,25 @@ class ArmaTest {
         assertThat(granada.ranura()).isEqualTo("explosiva");
         assertThat(fusil.mensajeDeEquipado()).isEqualTo("Se equipa en la ranura primaria.");
         assertThat(granada.mensajeDeEquipado()).contains("tecla G");
+    }
+
+    @Test
+    void todasLasClasesCompartenLaCapacidadUIcapableConImagenYSonido() {
+        List<UIcapable> armas = List.of(
+                new Fusil("AK-47", 1, 2700, 36, 71, 2.4, 600, true, 2, 3, false),
+                new Escopeta("XM1014", 2, 2000, 20, 55, 3.0, 171, 8, 4.5),
+                new Pistola("USP-S", 3, 200, 35, 70, 1.5, 352, false, true),
+                new Francotirador("AWP", 4, 4750, 115, 85, 3.7, 340, false, 8, 5, true, 80.0, 4),
+                new Humo("Humo de cortina", 5, 300),
+                new Granada("Granada HE", 6, 300, "explosiva", 4.0, 30.0, 1.0, 98, false),
+                new Flash("Flashbang", 7, 200, "cegadora", 5.0, 20.0, 2.0, 100, 4.5));
+
+        assertThat(armas).allSatisfy(ui -> {
+            assertThat(ui.imagen()).startsWith("recursos/imagenes/").endsWith(".png");
+            assertThat(ui.sonido()).startsWith("recursos/sonidos/").endsWith(".mp3");
+        });
+        assertThat(armas.get(0).imagen()).isEqualTo("recursos/imagenes/fusil.png");
+        assertThat(armas.get(6).sonido()).isEqualTo("recursos/sonidos/flash.mp3");
     }
 
     @Test

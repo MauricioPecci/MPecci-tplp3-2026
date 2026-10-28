@@ -49,6 +49,17 @@ class ArmaControllerTest {
     }
 
     @Test
+    void laImagenYSonidoDeTodasLasClasesSePidenATravesDeUIcapable() throws Exception {
+        mockMvc.perform(get("/api/armas/ui"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].clase").value("Fusil"))
+                .andExpect(jsonPath("$[0].imagen").value("recursos/imagenes/fusil.png"))
+                .andExpect(jsonPath("$[0].sonido").value("recursos/sonidos/fusil.mp3"))
+                .andExpect(jsonPath("$[6].clase").value("Flash"))
+                .andExpect(jsonPath("$[6].imagen").value("recursos/imagenes/flash.png"));
+    }
+
+    @Test
     void elFusilSeConstruyeDesdeLaUrlYSobrecargaCalcularDano() throws Exception {
         mockMvc.perform(get("/api/armas/fusil")
                         .param("nombre", "AK-47")
