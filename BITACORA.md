@@ -16,6 +16,11 @@
   - Creado controlador REST `py.edu.uc.lp3.rest.controller.arma.ArmaCrudController` con endpoints CRUD en `/api/armas-crud` (GET, GET/{id}, POST, PUT/{id}, DELETE/{id}) retornando `ResponseEntity`.
   - Compilación y tests ejecutados con `./mvnw test` - BUILD SUCCESS (20 tests).
 
+6. **"Actualiza la bitacora y pushea los cambios"**
+  - Se verificó el CRUD de `/api/armas-crud` de punta a punta: alta, listado, consulta por id, actualización, borrado (`204`), consulta posterior (`404`) y validación de negocio (`400`).
+  - Se ejecutó `./mvnw test` sin fallos.
+  - Se actualizó esta bitácora y se publicaron los commits pendientes en `origin/main`.
+
 ## Resumen de los prompts
 
 1. **"Arreglar la configuración de paquetes y hacer el código ejecutable; luego, añadir sobrecarga y sobreescritura a las clases Fusil y Humo."**
@@ -87,3 +92,17 @@
    - endpoint `GET /api/armas/ui` en `ArmaController` que lista las clases como
      `UIcapable` y responde la imagen y el sonido en JSON;
    - pruebas de dominio (todas las clases son `UIcapable`) y de endpoint.
+
+6. **"Necesito un CRUD rest para la clase \"Arma\" que siga la arquitectura de 3
+   capas, tenga una capa de negocios con alguna validación (service) y persista
+   en una base de datos H2 con spring data"** — incluyó:
+   - entidad JPA `ArmaEntity` y repositorio `ArmaRepository` con Spring Data;
+   - servicio `ArmaService` con validaciones de nombre, tipo, precio, id y
+     existencia del recurso;
+   - controlador REST `ArmaCrudController` en `/api/armas-crud` con los cinco
+     endpoints del CRUD;
+   - configuración de H2 en memoria y consola H2 en `application.properties`.
+
+7. **"Actualiza la bitacora y pushea los cambios"** — se verificó el CRUD con
+   pruebas y llamadas HTTP, se actualizó esta bitácora y se publicaron los
+   cambios en `origin/main`.
