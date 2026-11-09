@@ -20,6 +20,12 @@ public class ArmaEntity {
 
     private String tipo;
 
+    private int dano;
+
+    private int municionActual;
+
+    private int municionMaxima;
+
     public ArmaEntity() {
     }
 
@@ -27,6 +33,15 @@ public class ArmaEntity {
         this.nombre = nombre;
         this.precio = precio;
         this.tipo = tipo;
+    }
+
+    public ArmaEntity(String nombre, double precio, String tipo, int dano, int municionActual, int municionMaxima) {
+        this.nombre = nombre;
+        this.precio = precio;
+        this.tipo = tipo;
+        this.dano = dano;
+        this.municionActual = municionActual;
+        this.municionMaxima = municionMaxima;
     }
 
     public Long getId() {
@@ -59,5 +74,29 @@ public class ArmaEntity {
 
     public void setTipo(String tipo) {
         this.tipo = tipo;
+    }
+
+    public int getDano() {
+        return dano;
+    }
+
+    public void setDano(int dano) {
+        this.dano = dano;
+    }
+
+    public int getMunicionActual() {
+        return municionActual;
+    }
+
+    public void setMunicionActual(int municionActual) {
+        this.municionActual = municionActual;
+    }
+
+    public int getMunicionMaxima() {
+        return municionMaxima;
+    }
+
+    public void setMunicionMaxima(int municionMaxima) {
+        this.municionMaxima = municionMaxima;
     }
 }

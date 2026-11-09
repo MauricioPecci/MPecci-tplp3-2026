@@ -1,6 +1,7 @@
 package py.edu.uc.lp3.rest.controller.arma;
 
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,5 +53,17 @@ public class ArmaCrudController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         armaService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/dano")
+    public ResponseEntity<ArmaEntity> aplicarDano(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
+        int dano = body != null && body.get("dano") != null ? body.get("dano") : 0;
+        return ResponseEntity.ok(armaService.aplicarDano(id, dano));
+    }
+
+    @PostMapping("/{id}/cargar-municion")
+    public ResponseEntity<ArmaEntity> cargarMunicion(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
+        int cantidad = body != null && body.get("cantidad") != null ? body.get("cantidad") : 0;
+        return ResponseEntity.ok(armaService.cargarMunicion(id, cantidad));
     }
 }
