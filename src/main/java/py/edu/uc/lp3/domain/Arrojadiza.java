@@ -1,12 +1,18 @@
 package py.edu.uc.lp3.domain;
 
+import jakarta.persistence.MappedSuperclass;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 
+@MappedSuperclass
 public abstract class Arrojadiza extends Arma {
     private String tipo;
     private double radio;
     private double distancia;
     private double duracion;
+
+    protected Arrojadiza() {
+        super();
+    }
 
     public Arrojadiza(String nombre, int id, double precio, String tipo, double radio, double distancia, double duracion) {
         super(nombre, id, precio);
@@ -57,6 +63,7 @@ public abstract class Arrojadiza extends Arma {
         return "nombre=" + getNombre()
                 + ", id=" + getId()
                 + ", precio=" + getPrecio()
+                + ", durabilidad=" + getDurabilidad()
                 + ", tipo=" + tipo
                 + ", radio=" + radio
                 + ", distancia=" + distancia

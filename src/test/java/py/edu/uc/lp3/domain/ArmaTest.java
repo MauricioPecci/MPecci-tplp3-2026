@@ -7,6 +7,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
+import py.edu.uc.lp3.exceptions.CargaMunicionException;
+import py.edu.uc.lp3.exceptions.DanoInvalidoException;
 
 class ArmaTest {
 
@@ -119,5 +121,51 @@ class ArmaTest {
 
         assertThat(francotirador).isInstanceOf(Fusil.class).isInstanceOf(Arma.class);
         assertThat(francotirador.describir()).startsWith("Francotirador[");
+    }
+
+    @Test
+    void dispararAConsumeMunicionYAplicaDano() {
+        Fusil fusil = new Fusil("AK-47", 1, 2700, 36, 71, 2.4, 600, true);
+        Humo humo = new Humo("Humo de cortina", 8, 300);
+
+        int dano = fusil.dispararA(humo, 0, false);
+
+        assertThat(dano).isEqualTo(36);
+        assertThat(fusil.getMunicionActual()).isEqualTo(29);
+        assertThat(humo.getDurabilidad()).isEqualTo(64);
+    }
+
+    @Test
+    void dispararSinMunicionFallaSinCambiarElEstadoDelObjetivo() {
+        Fusil fusil = new Fusil("AK-47", 1, 2700, 36, 71, 2.4, 600, true);
+        Humo humo = new Humo("Humo de cortina", 8, 300);
+        fusil.setMunicionActual(0);
+
+        assertThatThrownBy(() -> fusil.dispararA(humo, 0, false))
+                .isInstanceOf(CargaMunicionException.class);
+        assertThat(humo.getDurabilidad()).isEqualTo(100);
+    }
+
+    @Test
+    void recargarRespetaElMaximoYNoDejaMunicionInvalida() {
+        Pistola pistola = new Pistola("USP-S", 3, 200, 35, 70, 1.5, 352, false, true);
+        pistola.setMunicionMaxima(20);
+        pistola.setMunicionActual(12);
+
+        assertThat(pistola.recargar(5)).isEqualTo(17);
+        assertThatThrownBy(() -> pistola.recargar(10))
+                .isInstanceOf(CargaMunicionException.class);
+        assertThat(pistola.getMunicionActual()).isEqualTo(17);
+    }
+
+    @Test
+    void recibirDanoNoDejaDurabilidadNegativa() {
+        Humo humo = new Humo("Humo de cortina", 8, 300);
+
+        humo.recibirDano(40);
+        assertThat(humo.getDurabilidad()).isEqualTo(60);
+        assertThatThrownBy(() -> humo.recibirDano(61))
+                .isInstanceOf(DanoInvalidoException.class);
+        assertThat(humo.getDurabilidad()).isEqualTo(60);
     }
 }

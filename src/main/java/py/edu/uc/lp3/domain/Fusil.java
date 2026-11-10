@@ -1,13 +1,32 @@
 package py.edu.uc.lp3.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 
+@Entity
+@DiscriminatorValue("FUSIL")
 public class Fusil extends ArmaDeFuego implements Equipable {
+
+    @Column(name = "fusil_automatica")
     private boolean automatica;
+
     private int mira;
+
     private int retroceso;
+
+    @Column(name = "fusil_silenciador")
     private boolean silenciador;
 
+    public Fusil() {
+        super();
+        setMira(1);
+        setRetroceso(0);
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     public Fusil(String nombre, int id, double precio, int dano, int precision, double recarga, double velocidad,
                  boolean automatica, int mira, int retroceso, boolean silenciador) {
         super(nombre, id, precio, dano, precision, recarga, velocidad);
@@ -17,25 +36,10 @@ public class Fusil extends ArmaDeFuego implements Equipable {
         this.silenciador = silenciador;
     }
 
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     public Fusil(String nombre, int id, double precio, int dano, int precision, double recarga, double velocidad,
                  boolean automatica) {
         this(nombre, id, precio, dano, precision, recarga, velocidad, automatica, 1, 0, false);
-    }
-
-    public int calcularDano() {
-        return getDano();
-    }
-
-    public int calcularDano(int distancia) {
-        if (distancia < 0) {
-            throw new ArmaInvalidaException("La distancia no puede ser negativa: " + distancia);
-        }
-        return Math.max(1, getDano() - distancia / 10);
-    }
-
-    public int calcularDano(int distancia, boolean disparoCritico) {
-        int dano = calcularDano(distancia);
-        return disparoCritico ? dano * 2 : dano;
     }
 
     @Override

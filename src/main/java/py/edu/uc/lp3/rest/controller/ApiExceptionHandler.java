@@ -10,11 +10,21 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import py.edu.uc.lp3.exceptions.ArmaDominioException;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
+import py.edu.uc.lp3.exceptions.ArmaNoEncontradaException;
 import py.edu.uc.lp3.exceptions.CargaMunicionException;
 import py.edu.uc.lp3.exceptions.DanoInvalidoException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    @ExceptionHandler(ArmaNoEncontradaException.class)
+    public ResponseEntity<Map<String, Object>> armaNoEncontrada(ArmaNoEncontradaException e) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tipo", "ARMA_NO_ENCONTRADA");
+        body.put("error", e.getMessage());
+        body.put("rechazo", "el recurso solicitado no existe");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
 
     @ExceptionHandler(ArmaInvalidaException.class)
     public ResponseEntity<Map<String, Object>> armaInvalida(ArmaInvalidaException e) {

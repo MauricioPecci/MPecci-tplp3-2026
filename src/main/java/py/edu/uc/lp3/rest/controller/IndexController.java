@@ -15,13 +15,15 @@ public class IndexController {
                 "estado", "activo",
                 "endpoints", List.of(
                         "GET /",
+                        "GET|POST /api/armas",
+                        "GET|PUT|DELETE /api/armas/{id}",
+                        "POST /api/armas/simulacion",
+                        "POST /api/armas/{id}/dano",
+                        "POST /api/armas/{id}/cargar-municion",
                         "GET /api/armas/descripcion",
                         "GET /api/armas/equipables",
                         "GET /api/armas/ui",
                         "GET /api/armas/fusil?nombre=AK-47&distancia=100&critico=true",
-                        "GET /api/armas/humo?nombre=Humo de cortina&radio=6&radioExtra=2",
-                        "GET|POST|PUT|DELETE /api/armas-crud",
-                        "POST /api/armas-crud/{id}/dano",
-                        "POST /api/armas-crud/{id}/cargar-municion"));
+                        "GET /api/armas/humo?nombre=Humo de cortina&radio=6&radioExtra=2"));
     }
 }

@@ -1,9 +1,25 @@
 package py.edu.uc.lp3.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("PISTOLA")
 public class Pistola extends ArmaDeFuego {
+
+    @Column(name = "pistola_automatica")
     private boolean automatica;
+
+    @Column(name = "pistola_silenciador")
     private boolean silenciador;
 
+    public Pistola() {
+        super();
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     public Pistola(String nombre, int id, double precio, int dano, int precision, double recarga, double velocidad,
                    boolean automatica, boolean silenciador) {
         super(nombre, id, precio, dano, precision, recarga, velocidad);

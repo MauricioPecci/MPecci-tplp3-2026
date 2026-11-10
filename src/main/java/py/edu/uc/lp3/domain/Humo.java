@@ -1,15 +1,32 @@
 package py.edu.uc.lp3.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("HUMO")
 public class Humo extends Arrojadiza {
 
+    public Humo() {
+        super();
+        setTipo("humo");
+        setRadio(6.0);
+        setDistancia(25.0);
+        setDuracion(18.0);
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     public Humo(String nombre, int id, double precio, String tipo, double radio, double distancia, double duracion) {
         super(nombre, id, precio, tipo, radio, distancia, duracion);
     }
 
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     public Humo(String nombre, int id, double precio) {
         this(nombre, id, precio, "humo", 6.0, 25.0, 18.0);
     }
 
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     public Humo(String nombre, int id, double precio, double radio) {
         this(nombre, id, precio, "humo", radio, 25.0, 18.0);
     }

@@ -1,14 +1,23 @@
 package py.edu.uc.lp3.domain;
 
+import jakarta.persistence.MappedSuperclass;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 import py.edu.uc.lp3.exceptions.CargaMunicionException;
-import py.edu.uc.lp3.exceptions.DanoInvalidoException;
 
+@MappedSuperclass
 public abstract class ArmaDeFuego extends Arma {
     private int dano;
     private int precision;
     private double recarga;
     private double velocidad;
+    private int municionActual;
+    private int municionMaxima;
+
+    protected ArmaDeFuego() {
+        super();
+        this.municionActual = 30;
+        this.municionMaxima = 30;
+    }
 
     public ArmaDeFuego(String nombre, int id, double precio, int dano, int precision, double recarga, double velocidad) {
         super(nombre, id, precio);
@@ -16,6 +25,8 @@ public abstract class ArmaDeFuego extends Arma {
         setPrecision(precision);
         setRecarga(recarga);
         setVelocidad(velocidad);
+        this.municionActual = 30;
+        this.municionMaxima = 30;
     }
 
     public int getDano() { return dano; }
@@ -54,38 +65,66 @@ public abstract class ArmaDeFuego extends Arma {
         this.velocidad = velocidad;
     }
 
-    public int reglaDeDano(int danoAplicado, int municionMaxima) {
-        if (danoAplicado < 0) {
-            throw new DanoInvalidoException("El daño aplicado no puede ser negativo: " + danoAplicado);
+    public int getMunicionActual() { return municionActual; }
+
+    public void setMunicionActual(int municionActual) {
+        if (municionActual < 0) {
+            throw new CargaMunicionException("La munición actual no puede ser negativa: " + municionActual);
         }
-        if (municionMaxima <= 0) {
-            throw new DanoInvalidoException("La munición máxima debe ser mayor a 0 para evaluar el daño");
-        }
-        int limite = municionMaxima * 5;
-        if (danoAplicado > limite) {
-            throw new DanoInvalidoException("El daño excede el límite permitido para esta arma: " + danoAplicado);
-        }
-        return danoAplicado;
+        this.municionActual = municionActual;
     }
 
-    public int reglaDeCargaMunicion(int municionActual, int cantidad, int municionMaxima) {
-        if (cantidad <= 0) {
-            throw new CargaMunicionException("La cantidad a cargar debe ser mayor a 0");
-        }
+    public int getMunicionMaxima() { return municionMaxima; }
+
+    public void setMunicionMaxima(int municionMaxima) {
         if (municionMaxima <= 0) {
             throw new CargaMunicionException("La munición máxima debe ser mayor a 0: " + municionMaxima);
         }
-        if (municionActual < 0) {
-            throw new CargaMunicionException("La munición actual no puede ser negativa: " + municionActual);
+        this.municionMaxima = municionMaxima;
+    }
+
+    public int calcularDano() {
+        return dano;
+    }
+
+    public int calcularDano(int distancia) {
+        if (distancia < 0) {
+            throw new ArmaInvalidaException("La distancia no puede ser negativa: " + distancia);
+        }
+        return Math.max(1, dano - distancia / 10);
+    }
+
+    public int calcularDano(int distancia, boolean disparoCritico) {
+        int danoBase = calcularDano(distancia);
+        return disparoCritico ? danoBase * 2 : danoBase;
+    }
+
+    public int dispararA(Arma objetivo, int distancia, boolean disparoCritico) {
+        if (objetivo == null) {
+            throw new ArmaInvalidaException("El objetivo del disparo no puede ser nulo");
+        }
+        if (municionActual <= 0) {
+            throw new CargaMunicionException("No hay munición disponible para disparar");
+        }
+        int danoAplicado = calcularDano(distancia, disparoCritico);
+        objetivo.recibirDano(danoAplicado);
+        municionActual--;
+        return danoAplicado;
+    }
+
+    public int recargar(int cantidad) {
+        if (cantidad <= 0) {
+            throw new CargaMunicionException("La cantidad a recargar debe ser mayor a 0: " + cantidad);
         }
         int nuevaMunicion = municionActual + cantidad;
         if (nuevaMunicion > municionMaxima) {
             throw new CargaMunicionException(
-                    "Carga inválida: munición actual (" + municionActual
+                    "Recarga inválida: munición actual (" + municionActual
                             + ") + cantidad (" + cantidad
                             + ") supera la capacidad máxima (" + municionMaxima + ")");
         }
-        return nuevaMunicion;
+        municionActual = nuevaMunicion;
+        return municionActual;
     }
 
     @Override
@@ -93,9 +132,12 @@ public abstract class ArmaDeFuego extends Arma {
         return "nombre=" + getNombre()
                 + ", id=" + getId()
                 + ", precio=" + getPrecio()
+                + ", durabilidad=" + getDurabilidad()
                 + ", dano=" + dano
                 + ", precision=" + precision
                 + ", recarga=" + recarga
-                + ", velocidad=" + velocidad;
+                + ", velocidad=" + velocidad
+                + ", municionActual=" + municionActual
+                + ", municionMaxima=" + municionMaxima;
     }
 }

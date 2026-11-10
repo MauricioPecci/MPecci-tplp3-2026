@@ -1,9 +1,30 @@
 package py.edu.uc.lp3.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("GRANADA")
 public class Granada extends Arrojadiza implements Equipable {
+
+    @Column(name = "dano_explosivo")
     private int dano;
+
     private boolean aturdimiento;
 
+    public Granada() {
+        super();
+        setTipo("explosiva");
+        setRadio(4.0);
+        setDistancia(30.0);
+        setDuracion(1.0);
+        setDano(98);
+        setAturdimiento(false);
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     public Granada(String nombre, int id, double precio, String tipo, double radio, double distancia, double duracion,
                    int dano, boolean aturdimiento) {
         super(nombre, id, precio, tipo, radio, distancia, duracion);

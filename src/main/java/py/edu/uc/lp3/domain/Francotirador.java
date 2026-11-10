@@ -1,9 +1,22 @@
 package py.edu.uc.lp3.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("FRANCOTIRADOR")
 public class Francotirador extends Fusil {
     private double alcance;
     private int zoom;
 
+    public Francotirador() {
+        super();
+        setAlcance(80.0);
+        setZoom(4);
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     public Francotirador(String nombre, int id, double precio, int dano, int precision, double recarga, double velocidad,
                          boolean automatica, int mira, int retroceso, boolean silenciador,
                          double alcance, int zoom) {

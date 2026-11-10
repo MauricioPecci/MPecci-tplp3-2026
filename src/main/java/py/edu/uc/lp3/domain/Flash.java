@@ -1,9 +1,26 @@
 package py.edu.uc.lp3.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("FLASH")
 public class Flash extends Arrojadiza {
     private int intensidad;
     private double duracionCeguera;
 
+    public Flash() {
+        super();
+        setTipo("cegadora");
+        setRadio(5.0);
+        setDistancia(20.0);
+        setDuracion(2.0);
+        setIntensidad(100);
+        setDuracionCeguera(4.5);
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.DISABLED)
     public Flash(String nombre, int id, double precio, String tipo, double radio, double distancia, double duracion,
                  int intensidad, double duracionCeguera) {
         super(nombre, id, precio, tipo, radio, distancia, duracion);

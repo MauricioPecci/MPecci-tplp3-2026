@@ -1,14 +1,19 @@
 package py.edu.uc.lp3.service;
 
 import java.util.List;
-import java.util.Optional;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import py.edu.uc.lp3.domain.Fusil;
-import py.edu.uc.lp3.entity.ArmaEntity;
+import org.springframework.transaction.annotation.Transactional;
+import py.edu.uc.lp3.domain.Arma;
+import py.edu.uc.lp3.domain.ArmaDeFuego;
+import py.edu.uc.lp3.domain.Arrojadiza;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
+import py.edu.uc.lp3.exceptions.ArmaNoEncontradaException;
 import py.edu.uc.lp3.exceptions.CargaMunicionException;
 import py.edu.uc.lp3.exceptions.DanoInvalidoException;
 import py.edu.uc.lp3.repository.ArmaRepository;
+import py.edu.uc.lp3.rest.dto.SimulacionRequest;
+import py.edu.uc.lp3.rest.dto.SimulacionResponse;
 
 @Service
 public class ArmaService {
@@ -19,73 +24,123 @@ public class ArmaService {
         this.armaRepository = armaRepository;
     }
 
-    public List<ArmaEntity> findAll() {
+    public List<Arma> findAll(String nombre, Double precioMax) {
+        if (nombre != null && !nombre.isBlank()) {
+            return armaRepository.findByNombreContainingIgnoreCase(nombre);
+        }
+        if (precioMax != null) {
+            return armaRepository.findByPrecioLessThanEqual(precioMax);
+        }
         return armaRepository.findAll();
     }
 
-    public Optional<ArmaEntity> findById(Long id) {
+    public Arma findById(Integer id) {
         if (id == null || id <= 0) {
             throw new ArmaInvalidaException("El id debe ser mayor a 0");
         }
-        return armaRepository.findById(id);
+        return armaRepository.findById(id)
+                .orElseThrow(() -> new ArmaNoEncontradaException("Arma no encontrada con id: " + id));
     }
 
-    public ArmaEntity create(ArmaEntity arma) {
+    @Transactional
+    public Arma create(Arma arma) {
+        if (arma == null) {
+            throw new ArmaInvalidaException("El arma no puede ser nula");
+        }
+        if (arma.getId() != 0) {
+            throw new ArmaInvalidaException("El id lo asigna la persistencia y no debe enviarse");
+        }
         validar(arma);
-        validarReglasNegocio(arma);
         return armaRepository.save(arma);
     }
 
-    public ArmaEntity update(Long id, ArmaEntity arma) {
-        if (id == null || id <= 0) {
-            throw new ArmaInvalidaException("El id debe ser mayor a 0");
+    @Transactional
+    public Arma update(Integer id, Arma datos) {
+        Arma existente = findById(id);
+        if (datos == null) {
+            throw new ArmaInvalidaException("El arma no puede ser nula");
         }
-        validar(arma);
-        validarReglasNegocio(arma);
-        ArmaEntity existente = armaRepository.findById(id)
-                .orElseThrow(() -> new ArmaInvalidaException("Arma no encontrada con id: " + id));
-        existente.setNombre(arma.getNombre());
-        existente.setPrecio(arma.getPrecio());
-        existente.setTipo(arma.getTipo());
-        existente.setDano(arma.getDano());
-        existente.setMunicionActual(arma.getMunicionActual());
-        existente.setMunicionMaxima(arma.getMunicionMaxima());
+        if (!existente.getClass().equals(datos.getClass())) {
+            throw new ArmaInvalidaException(
+                    "No se puede cambiar el tipo del arma: se esperaba "
+                            + existente.getClass().getSimpleName());
+        }
+        BeanUtils.copyProperties(datos, existente, "id");
+        validar(existente);
         return armaRepository.save(existente);
     }
 
-    public void delete(Long id) {
-        if (id == null || id <= 0) {
-            throw new ArmaInvalidaException("El id debe ser mayor a 0");
-        }
-        if (!armaRepository.existsById(id)) {
-            throw new ArmaInvalidaException("Arma no encontrada con id: " + id);
-        }
-        armaRepository.deleteById(id);
+    @Transactional
+    public void delete(Integer id) {
+        Arma arma = findById(id);
+        armaRepository.delete(arma);
     }
 
-    public ArmaEntity aplicarDano(Long id, int dano) {
-        ArmaEntity arma = armaRepository.findById(id)
-                .orElseThrow(() -> new ArmaInvalidaException("Arma no encontrada con id: " + id));
-        Fusil regla = construirReglasDominio(arma);
-        int danoValidado = regla.reglaDeDano(dano, arma.getMunicionMaxima());
-        arma.setDano(danoValidado);
+    @Transactional
+    public Arma aplicarDano(Integer id, int dano) {
+        Arma arma = findById(id);
+        arma.recibirDano(dano);
         return armaRepository.save(arma);
     }
 
-    public ArmaEntity cargarMunicion(Long id, int cantidad) {
-        ArmaEntity arma = armaRepository.findById(id)
-                .orElseThrow(() -> new ArmaInvalidaException("Arma no encontrada con id: " + id));
-        Fusil regla = construirReglasDominio(arma);
-        int nuevaMunicion = regla.reglaDeCargaMunicion(arma.getMunicionActual(), cantidad, arma.getMunicionMaxima());
-        arma.setMunicionActual(nuevaMunicion);
+    @Transactional
+    public Arma cargarMunicion(Integer id, int cantidad) {
+        Arma arma = findById(id);
+        if (!(arma instanceof ArmaDeFuego fuego)) {
+            throw new ArmaInvalidaException("Solo las armas de fuego pueden recargar munición");
+        }
+        fuego.recargar(cantidad);
         return armaRepository.save(arma);
     }
 
-    private Fusil construirReglasDominio(ArmaEntity arma) {
-        return new Fusil(arma.getNombre(), 1, arma.getPrecio(), arma.getDano(), 50, 2.0, 100.0, false);
+    @Transactional
+    public SimulacionResponse simular(SimulacionRequest request) {
+        if (request == null) {
+            throw new ArmaInvalidaException("La simulación no puede ser nula");
+        }
+
+        Arma atacante = findById(request.atacanteId());
+        Arma objetivo = findById(request.objetivoId());
+        Arma recargador = findById(request.recargadorId());
+
+        if (atacante.getId() == objetivo.getId()
+                || atacante.getId() == recargador.getId()
+                || objetivo.getId() == recargador.getId()) {
+            throw new ArmaInvalidaException("La simulación requiere tres armas distintas");
+        }
+        if (!(atacante instanceof ArmaDeFuego fuegoAtacante)) {
+            throw new ArmaInvalidaException("El atacante debe ser un arma de fuego");
+        }
+        if (!(recargador instanceof ArmaDeFuego fuegoRecargador)) {
+            throw new ArmaInvalidaException("El recargador debe ser un arma de fuego");
+        }
+
+        int atacanteMunicionAntes = fuegoAtacante.getMunicionActual();
+        int objetivoDurabilidadAntes = objetivo.getDurabilidad();
+        int recargadorMunicionAntes = fuegoRecargador.getMunicionActual();
+
+        int danoAplicado = fuegoAtacante.dispararA(objetivo, request.distancia(), request.critico());
+        int recargadorMunicionDespues = fuegoRecargador.recargar(request.municion());
+
+        armaRepository.save(atacante);
+        armaRepository.save(objetivo);
+        armaRepository.save(recargador);
+
+        return new SimulacionResponse(
+                atacante.getClass().getSimpleName(),
+                atacanteMunicionAntes,
+                fuegoAtacante.getMunicionActual(),
+                objetivo.getClass().getSimpleName(),
+                objetivoDurabilidadAntes,
+                objetivo.getDurabilidad(),
+                recargador.getClass().getSimpleName(),
+                recargadorMunicionAntes,
+                recargadorMunicionDespues,
+                danoAplicado,
+                request.municion());
     }
 
-    private void validar(ArmaEntity arma) {
+    private void validar(Arma arma) {
         if (arma == null) {
             throw new ArmaInvalidaException("El arma no puede ser nula");
         }
@@ -95,19 +150,40 @@ public class ArmaService {
         if (arma.getPrecio() < 0) {
             throw new ArmaInvalidaException("El precio no puede ser negativo: " + arma.getPrecio());
         }
-        if (arma.getTipo() == null || arma.getTipo().isBlank()) {
-            throw new ArmaInvalidaException("El tipo del arma no puede estar vacío");
+        if (arma.getDurabilidad() < 0) {
+            throw new ArmaInvalidaException("La durabilidad no puede ser negativa: " + arma.getDurabilidad());
         }
-    }
-
-    private void validarReglasNegocio(ArmaEntity arma) {
-        Fusil regla = construirReglasDominio(arma);
-        regla.reglaDeDano(arma.getDano(), arma.getMunicionMaxima());
-        regla.reglaDeCargaMunicion(0, arma.getMunicionActual() == 0 ? 1 : arma.getMunicionActual(), arma.getMunicionMaxima());
-        if (arma.getMunicionActual() > arma.getMunicionMaxima()) {
-            throw new CargaMunicionException(
-                    "La munición actual (" + arma.getMunicionActual()
-                            + ") no puede superar la munición máxima (" + arma.getMunicionMaxima() + ")");
+        if (arma instanceof ArmaDeFuego fuego) {
+            if (fuego.getDano() < 0) {
+                throw new DanoInvalidoException("El daño no puede ser negativo: " + fuego.getDano());
+            }
+            if (fuego.getMunicionActual() < 0) {
+                throw new CargaMunicionException(
+                        "La munición actual no puede ser negativa: " + fuego.getMunicionActual());
+            }
+            if (fuego.getMunicionMaxima() <= 0) {
+                throw new CargaMunicionException(
+                        "La munición máxima debe ser mayor a 0: " + fuego.getMunicionMaxima());
+            }
+            if (fuego.getMunicionActual() > fuego.getMunicionMaxima()) {
+                throw new CargaMunicionException(
+                        "La munición actual (" + fuego.getMunicionActual()
+                                + ") no puede superar la munición máxima (" + fuego.getMunicionMaxima() + ")");
+            }
+        }
+        if (arma instanceof Arrojadiza arrojadiza) {
+            if (arrojadiza.getRadio() <= 0) {
+                throw new ArmaInvalidaException(
+                        "El radio de cobertura debe ser mayor a 0: " + arrojadiza.getRadio());
+            }
+            if (arrojadiza.getDistancia() <= 0) {
+                throw new ArmaInvalidaException(
+                        "La distancia de lanzamiento debe ser mayor a 0: " + arrojadiza.getDistancia());
+            }
+            if (arrojadiza.getDuracion() <= 0) {
+                throw new ArmaInvalidaException(
+                        "La duración debe ser mayor a 0: " + arrojadiza.getDuracion());
+            }
         }
     }
 }
