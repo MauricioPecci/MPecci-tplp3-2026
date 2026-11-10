@@ -16,6 +16,18 @@
   - Creado controlador REST `py.edu.uc.lp3.rest.controller.arma.ArmaCrudController` con endpoints CRUD en `/api/armas-crud` (GET, GET/{id}, POST, PUT/{id}, DELETE/{id}) retornando `ResponseEntity`.
   - Compilación y tests ejecutados con `./mvnw test` - BUILD SUCCESS (20 tests).
 
+6. **"Añade las reglas de negocio daño y carga de municion con jerarquia de excepciones del dominio y un handler por tipo"**
+  - Jerarquía de excepciones: `ArmaDominioException` (base) y hijas `ArmaInvalidaException`, `DanoInvalidoException`, `CargaMunicionException`.
+  - `ArmaEntity` extendida con `dano`, `municionActual`, `municionMaxima`.
+  - `ArmaService`: validaciones de negocio y operaciones `aplicarDano`/`cargarMunicion`; endpoints en `ArmaCrudController` (`POST /{id}/dano`, `POST /{id}/cargar-municion`).
+  - `ApiExceptionHandler`: handler por tipo (`ARMA_INVALIDA`, `DANO_INVALIDO`, `CARGA_MUNICION_INVALIDA`, fallback `DOMINIO`).
+  - Tests: `./mvnw test` BUILD SUCCESS (20 tests). Commit `1bea1a4`.
+
+7. **"Verifica consigna POO-08 (referencia) y luego cambia las reglas de negocio... actualiza README y bitácora"**
+  - Reglas de negocio movidas al dominio: `ArmaDeFuego.reglaDeDano(...)` y `ArmaDeFuego.reglaDeCargaMunicion(...)` (lanzan excepciones hijas). `ArmaService` ahora dispara estas reglas del dominio al validar/aplicar daño/cargar munición.
+  - `GET /` actualizado para exponer endpoints CRUD/reglas.
+  - `README.md` reescrito para reflejar H2/JPA, CRUD REST persistido, reglas CS2 (daño/carga de munición), jerarquía de excepciones + handlers por tipo, decisiones POO-08 y pendientes.
+  - `BITACORA.md` actualizada con este cambio.
 6. **"Actualiza la bitacora y pushea los cambios"**
   - Se verificó el CRUD de `/api/armas-crud` de punta a punta: alta, listado, consulta por id, actualización, borrado (`204`), consulta posterior (`404`) y validación de negocio (`400`).
   - Se ejecutó `./mvnw test` sin fallos.

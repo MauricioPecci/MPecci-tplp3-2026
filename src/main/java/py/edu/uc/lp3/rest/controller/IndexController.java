@@ -19,6 +19,9 @@ public class IndexController {
                         "GET /api/armas/equipables",
                         "GET /api/armas/ui",
                         "GET /api/armas/fusil?nombre=AK-47&distancia=100&critico=true",
-                        "GET /api/armas/humo?nombre=Humo de cortina&radio=6&radioExtra=2"));
+                        "GET /api/armas/humo?nombre=Humo de cortina&radio=6&radioExtra=2",
+                        "GET|POST|PUT|DELETE /api/armas-crud",
+                        "POST /api/armas-crud/{id}/dano",
+                        "POST /api/armas-crud/{id}/cargar-municion"));
     }
 }

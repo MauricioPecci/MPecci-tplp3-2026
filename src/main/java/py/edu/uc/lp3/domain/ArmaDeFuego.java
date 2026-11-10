@@ -1,6 +1,8 @@
 package py.edu.uc.lp3.domain;
 
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
+import py.edu.uc.lp3.exceptions.CargaMunicionException;
+import py.edu.uc.lp3.exceptions.DanoInvalidoException;
 
 public abstract class ArmaDeFuego extends Arma {
     private int dano;
@@ -50,6 +52,40 @@ public abstract class ArmaDeFuego extends Arma {
             throw new ArmaInvalidaException("La velocidad de disparo no puede ser negativa: " + velocidad);
         }
         this.velocidad = velocidad;
+    }
+
+    public int reglaDeDano(int danoAplicado, int municionMaxima) {
+        if (danoAplicado < 0) {
+            throw new DanoInvalidoException("El daño aplicado no puede ser negativo: " + danoAplicado);
+        }
+        if (municionMaxima <= 0) {
+            throw new DanoInvalidoException("La munición máxima debe ser mayor a 0 para evaluar el daño");
+        }
+        int limite = municionMaxima * 5;
+        if (danoAplicado > limite) {
+            throw new DanoInvalidoException("El daño excede el límite permitido para esta arma: " + danoAplicado);
+        }
+        return danoAplicado;
+    }
+
+    public int reglaDeCargaMunicion(int municionActual, int cantidad, int municionMaxima) {
+        if (cantidad <= 0) {
+            throw new CargaMunicionException("La cantidad a cargar debe ser mayor a 0");
+        }
+        if (municionMaxima <= 0) {
+            throw new CargaMunicionException("La munición máxima debe ser mayor a 0: " + municionMaxima);
+        }
+        if (municionActual < 0) {
+            throw new CargaMunicionException("La munición actual no puede ser negativa: " + municionActual);
+        }
+        int nuevaMunicion = municionActual + cantidad;
+        if (nuevaMunicion > municionMaxima) {
+            throw new CargaMunicionException(
+                    "Carga inválida: munición actual (" + municionActual
+                            + ") + cantidad (" + cantidad
+                            + ") supera la capacidad máxima (" + municionMaxima + ")");
+        }
+        return nuevaMunicion;
     }
 
     @Override

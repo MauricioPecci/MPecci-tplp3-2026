@@ -3,6 +3,7 @@ package py.edu.uc.lp3.service;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
+import py.edu.uc.lp3.domain.Fusil;
 import py.edu.uc.lp3.entity.ArmaEntity;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 import py.edu.uc.lp3.exceptions.CargaMunicionException;
@@ -63,33 +64,25 @@ public class ArmaService {
     }
 
     public ArmaEntity aplicarDano(Long id, int dano) {
-        if (dano < 0) {
-            throw new DanoInvalidoException("El daño aplicado no puede ser negativo: " + dano);
-        }
         ArmaEntity arma = armaRepository.findById(id)
                 .orElseThrow(() -> new ArmaInvalidaException("Arma no encontrada con id: " + id));
-        if (dano > arma.getMunicionMaxima() * 5) {
-            throw new DanoInvalidoException("El daño excede el límite permitido para esta arma: " + dano);
-        }
-        arma.setDano(dano);
+        Fusil regla = construirReglasDominio(arma);
+        int danoValidado = regla.reglaDeDano(dano, arma.getMunicionMaxima());
+        arma.setDano(danoValidado);
         return armaRepository.save(arma);
     }
 
     public ArmaEntity cargarMunicion(Long id, int cantidad) {
-        if (cantidad <= 0) {
-            throw new CargaMunicionException("La cantidad a cargar debe ser mayor a 0");
-        }
         ArmaEntity arma = armaRepository.findById(id)
                 .orElseThrow(() -> new ArmaInvalidaException("Arma no encontrada con id: " + id));
-        int nuevaMunicion = arma.getMunicionActual() + cantidad;
-        if (nuevaMunicion > arma.getMunicionMaxima()) {
-            throw new CargaMunicionException(
-                    "Carga inválida: munición actual (" + arma.getMunicionActual()
-                            + ") + cantidad (" + cantidad
-                            + ") supera la capacidad máxima (" + arma.getMunicionMaxima() + ")");
-        }
+        Fusil regla = construirReglasDominio(arma);
+        int nuevaMunicion = regla.reglaDeCargaMunicion(arma.getMunicionActual(), cantidad, arma.getMunicionMaxima());
         arma.setMunicionActual(nuevaMunicion);
         return armaRepository.save(arma);
+    }
+
+    private Fusil construirReglasDominio(ArmaEntity arma) {
+        return new Fusil(arma.getNombre(), 1, arma.getPrecio(), arma.getDano(), 50, 2.0, 100.0, false);
     }
 
     private void validar(ArmaEntity arma) {
@@ -108,15 +101,9 @@ public class ArmaService {
     }
 
     private void validarReglasNegocio(ArmaEntity arma) {
-        if (arma.getDano() < 0) {
-            throw new DanoInvalidoException("El daño no puede ser negativo: " + arma.getDano());
-        }
-        if (arma.getMunicionActual() < 0) {
-            throw new CargaMunicionException("La munición actual no puede ser negativa: " + arma.getMunicionActual());
-        }
-        if (arma.getMunicionMaxima() <= 0) {
-            throw new CargaMunicionException("La munición máxima debe ser mayor a 0: " + arma.getMunicionMaxima());
-        }
+        Fusil regla = construirReglasDominio(arma);
+        regla.reglaDeDano(arma.getDano(), arma.getMunicionMaxima());
+        regla.reglaDeCargaMunicion(0, arma.getMunicionActual() == 0 ? 1 : arma.getMunicionActual(), arma.getMunicionMaxima());
         if (arma.getMunicionActual() > arma.getMunicionMaxima()) {
             throw new CargaMunicionException(
                     "La munición actual (" + arma.getMunicionActual()
