@@ -6,115 +6,24 @@
 - **Modelo de LLM exacto:** `big-pickle` (ID del modelo provisto por la
   herramienta: `opencode/big-pickle`)
 
-## Cambios realizados ahora
-
-5. **"Necesito un CRUD rest para la clase \"Arma\" que siga la arquitectura de 3 capas,tenga una capa de negocios con alguna validación (service) y persista en una base de datos H2 con spring data"**
-  - Añadida configuración H2/JPA en `src/main/resources/application.properties` (memoria H2, consola habilitada, ddl-auto=update).
-  - Creada entidad JPA `py.edu.uc.lp3.entity.ArmaEntity` con `@Entity`, `@Id` autogenerado y campos `nombre`, `precio`, `tipo`.
-  - Creado repositorio `py.edu.uc.lp3.repository.ArmaRepository` extendiendo `JpaRepository<ArmaEntity, Long>`.
-  - Creado servicio `py.edu.uc.lp3.service.ArmaService` con lógica de negocio y validaciones (nombre/tipo no vacíos, precio >= 0, id > 0, existencia en update/delete).
-  - Creado controlador REST `py.edu.uc.lp3.rest.controller.arma.ArmaCrudController` con endpoints CRUD en `/api/armas-crud` (GET, GET/{id}, POST, PUT/{id}, DELETE/{id}) retornando `ResponseEntity`.
-  - Compilación y tests ejecutados con `./mvnw test` - BUILD SUCCESS (20 tests).
-
-6. **"Añade las reglas de negocio daño y carga de municion con jerarquia de excepciones del dominio y un handler por tipo"**
-  - Jerarquía de excepciones: `ArmaDominioException` (base) y hijas `ArmaInvalidaException`, `DanoInvalidoException`, `CargaMunicionException`.
-  - `ArmaEntity` extendida con `dano`, `municionActual`, `municionMaxima`.
-  - `ArmaService`: validaciones de negocio y operaciones `aplicarDano`/`cargarMunicion`; endpoints en `ArmaCrudController` (`POST /{id}/dano`, `POST /{id}/cargar-municion`).
-  - `ApiExceptionHandler`: handler por tipo (`ARMA_INVALIDA`, `DANO_INVALIDO`, `CARGA_MUNICION_INVALIDA`, fallback `DOMINIO`).
-  - Tests: `./mvnw test` BUILD SUCCESS (20 tests). Commit `1bea1a4`.
-
-7. **"Verifica consigna POO-08 (referencia) y luego cambia las reglas de negocio... actualiza README y bitácora"**
-  - Reglas de negocio movidas al dominio: `ArmaDeFuego.reglaDeDano(...)` y `ArmaDeFuego.reglaDeCargaMunicion(...)` (lanzan excepciones hijas). `ArmaService` ahora dispara estas reglas del dominio al validar/aplicar daño/cargar munición.
-  - `GET /` actualizado para exponer endpoints CRUD/reglas.
-  - `README.md` reescrito para reflejar H2/JPA, CRUD REST persistido, reglas CS2 (daño/carga de munición), jerarquía de excepciones + handlers por tipo, decisiones POO-08 y pendientes.
-  - `BITACORA.md` actualizada con este cambio.
-6. **"Actualiza la bitacora y pushea los cambios"**
-  - Se verificó el CRUD de `/api/armas-crud` de punta a punta: alta, listado, consulta por id, actualización, borrado (`204`), consulta posterior (`404`) y validación de negocio (`400`).
-  - Se ejecutó `./mvnw test` sin fallos.
-  - Se actualizó esta bitácora y se publicaron los commits pendientes en `origin/main`.
-
 ## Resumen de los prompts
 
 1. **"Arreglar la configuración de paquetes y hacer el código ejecutable; luego, añadir sobrecarga y sobreescritura a las clases Fusil y Humo."**
-  -Configuración de paquetes / ejecutable (proyecto Cs2/, Spring Boot 4.1.1 + Maven):
-  -chmod +x mvnw (no tenía permiso de ejecución).
-  -pom.xml: eliminados elementos vacíos inválidos (<licenses>, <developers>, <scm>, <url/>) y añadidos <name>/<description>.
-  -Renombrados 10 archivos de armas/ con git mv para coincidir con la clase pública (p. ej. ArmadeFuegoCs2.java → ArmaDeFuego.java, ArmasCs2.java → Arma.java).
-  -Corregido package armas; → package py.edu.uc.lp3.MPecci.Cs2.armas; para coincidir con el directorio.
-  -Verificado: ./mvnw package BUILD SUCCESS (test en verde) y java -jar target/Cs2-0.0.1-SNAPSHOT.jar arranca Tomcat en el 8080.
-  -Sobrecarga y sobreescritura:
-  -Arma.java: nuevo método describir() (ancestro a sobreescribir).
-  -Fusil.java: constructor sobrecargado (versión sin mira/retroceso/silenciador), método calcularDano() con 3 firmas, y @Override describir().
-  -Humo.java: 3 constructores sobrecargados (con valores por defecto), areaCobertura() con 2 firmas, y @Override describir().
-  .Verificado con ./mvnw compile y prueba interactiva en jshell (sobrecarga y despacho polimórfico de describir() funcionando).
+  - Configuración de paquetes/ejecutable (proyecto Cs2/, Spring Boot 4.1.1 + Maven): `chmod +x mvnw`; limpieza de `pom.xml`; renombrado de archivos con `git mv` para coincidir con clases públicas; corrección de `package` a `py.edu.uc.lp3.MPecci.Cs2.armas`. Verificado con `./mvnw package` (BUILD SUCCESS) y arranque en 8080.
+  - Sobrecarga y sobreescritura: `Arma.describir()`; `Fusil` con constructor sobrecargado, `calcularDano()` (3 firmas) y `@Override describir()`; `Humo` con 3 constructores, `areaCobertura()` (2 firmas) y `@Override describir()`. Verificado con `./mvnw compile` y `jshell`.
 
-2. **"Añadir sobrecarga y sobreescritura a las clases fusil y humo en
-   Cs2/.../armas"** — se sumaron constructores sobrecargados y la sobrecarga de
-   `calcularDano()` en `Fusil` y `areaCobertura()` en `Humo`; la sobrescritura de
-   `describir()` en ambas clases, con el método concreto en la base `Arma`.
-   Se verificó la compilación y se registró el cambio en un commit.
+2. **"Añadir sobrecarga y sobreescritura a las clases fusil y humo en Cs2/.../armas"** — constructores sobrecargados y sobrecarga de `calcularDano()`/`areaCobertura()`; sobrescritura de `describir()` con método concreto en `Arma`. Compilación verificada y cambio registrado en commit.
 
-3. **"Publicá un servicio HTTP con Spring Boot sobre el modelado (CS2). Las
-   clases siguen el template de paquetes. Se construye con constructores simples
-   y sobrecargados. Sobrecarga y sobreescritura, un método abstracto con dos
-   clases hijas, y dos servicios REST: GET / y un controller que construye desde
-   la URL y responde JSON"** — incluyó:
-   - reestructurar el proyecto a la raíz y mover las clases a
-     `py.edu.uc.lp3.domain` y los servicios a `py.edu.uc.lp3.rest.controller`
-     (template de paquetes), con `py.edu.uc.lp3.Application` para arrancar;
-   - volver abstracto `Arma.describir()` y sobrescribirlo en las dos ramas
-     independientes (`ArmaDeFuego`/`Arrojadiza`) y en las clases concretas
-     `Fusil`, `Humo`, `Escopeta`, `Pistola`, `Francotirador`, `Granada` y
-     `Flash`;
-   - agregar `ArmaInvalidaException` y validación de invariantes en los
-     constructores y setters del dominio;
-   - implementar `IndexController` (`GET /`) y `ArmaController` que construye
-     instancias desde los parámetros de la URL (elección de constructor simple o
-     sobrecargado) responde JSON y rechaza 400 ante reglas rotas;
-   - escribir pruebas de dominio y de endpoints MockMvc, verificar el arranque
-     con `./mvnw spring-boot:run` y probar los endpoints con `curl`;
-   - generar `README.md` con licencia Apache 2.0, diagrama Mermaid y el apartado
-     de sobrecarga/sobreescritura, `BITACORA.md` y
-     `docs/especificaciones-poo06-cs2.md`;
-   - publicar con commits separados y el enlace al commit de la solución.
+3. **"Publicá un servicio HTTP con Spring Boot sobre el modelado (CS2)..."** — reestructuración a template de paquetes (`py.edu.uc.lp3.domain`, `py.edu.uc.lp3.rest.controller`, `Application`); `Arma.describir()` abstracto y sobrescrituras en ramas/clases; `ArmaInvalidaException` e invariantes; `IndexController` (`GET /`) y `ArmaController` (construcción desde URL, JSON, 400 ante reglas rotas); pruebas de dominio/MockMvc; `README.md`, `BITACORA.md`, `docs/especificaciones-poo06-cs2.md`; commits separados.
 
-4. **"Elegí una capacidad que compartan dos clases y que esas 2 clases estén en
-   familias distintas; declarala como interface en domain con un mensaje que
-   devuelva texto. Cada clase la implementa a su modo, una de las dos puede
-   reemplazar un default. Un servicio REST pide ese mensaje a través del tipo de
-   la interfaz y responde JSON"** — incluyó:
-   - nueva interface `Equipable` en `domain` con el mensaje de texto
-     `mensajeDeEquipado()` y una implementación `default` sobre la primitiva
-     `ranura()`;
-   - `Fusil` (rama `ArmaDeFuego`) y `Granada` (rama `Arrojadiza`) implementan la
-     capacidad cada uno a su modo; `Fusil` usa el `default` y `Granada` lo
-     reemplaza (lanzamiento con la tecla G);
-   - endpoint `GET /api/armas/equipables` en `ArmaController` que declara
-     `List<Equipable>`, pide el mensaje por el tipo de la interfaz y responde
-     JSON;
-   - pruebas de dominio y de endpoint MockMvc para la nueva capacidad.
+4. **"Elegí una capacidad que compartan dos clases... declarala como interface..."** — interface `Equipable` (`ranura()`, `mensajeDeEquipado()` default); `Fusil` usa default y `Granada` (familia distinta) lo reemplaza; `GET /api/armas/equipables` usa el tipo `Equipable` y responde JSON; pruebas de dominio/MockMvc; verificación con `./mvnw test` y `curl`.
 
-5. **"Agregar a todas las clases la característica UIcapable con imagen y
-   sonido"** — incluyó:
-   - nueva interface `UIcapable` en `domain` con `imagen()` y `sonido()`;
-   - `Arma` la implementa en la raíz, de modo que **todas** las clases
-     (`Fusil`, `Escopeta`, `Pistola`, `Francotirador`, `Humo`, `Granada`,
-     `Flash`) heredan la característica con recursos derivados del nombre de la
-     clase;
-   - endpoint `GET /api/armas/ui` en `ArmaController` que lista las clases como
-     `UIcapable` y responde la imagen y el sonido en JSON;
-   - pruebas de dominio (todas las clases son `UIcapable`) y de endpoint.
+5. **"Agregar a todas las clases la característica UIcapable con imagen y sonido"** — interface `UIcapable` (`imagen()`, `sonido()`); implementada en la raíz `Arma` para que todas las clases la hereden; `GET /api/armas/ui` responde imagen/sonido en JSON; pruebas de dominio y endpoint.
 
-6. **"Necesito un CRUD rest para la clase \"Arma\" que siga la arquitectura de 3
-   capas, tenga una capa de negocios con alguna validación (service) y persista
-   en una base de datos H2 con spring data"** — incluyó:
-   - entidad JPA `ArmaEntity` y repositorio `ArmaRepository` con Spring Data;
-   - servicio `ArmaService` con validaciones de nombre, tipo, precio, id y
-     existencia del recurso;
-   - controlador REST `ArmaCrudController` en `/api/armas-crud` con los cinco
-     endpoints del CRUD;
-   - configuración de H2 en memoria y consola H2 en `application.properties`.
+6. **"Necesito un CRUD rest para la clase \"Arma\" que siga la arquitectura de 3 capas,tenga una capa de negocios con alguna validación (service) y persista en una base de datos H2 con spring data"** — configuración H2/JPA; entidad `ArmaEntity`; repositorio `ArmaRepository` (`JpaRepository`); servicio `ArmaService` con validaciones; controlador `ArmaCrudController` en `/api/armas-crud` (GET, GET/{id}, POST→201, PUT, DELETE→204). `./mvnw test` BUILD SUCCESS (20 tests).
 
-7. **"Actualiza la bitacora y pushea los cambios"** — se verificó el CRUD con
-   pruebas y llamadas HTTP, se actualizó esta bitácora y se publicaron los
-   cambios en `origin/main`.
+7. **"Añade las reglas de negocio daño y carga de municion con jerarquia de excepciones del dominio y un handler por tipo"** — jerarquía `ArmaDominioException` (base) + `ArmaInvalidaException`, `DanoInvalidoException`, `CargaMunicionException`; `ArmaEntity` con `dano`, `municionActual`, `municionMaxima`; `ArmaService` con `aplicarDano`/`cargarMunicion` y endpoints `POST /{id}/dano`, `POST /{id}/cargar-municion`; `ApiExceptionHandler` con handler por tipo. `./mvnw test` BUILD SUCCESS (20 tests). Commit `1bea1a4`.
+
+8. **"Verifica consigna POO-08... cambia las reglas de negocio... actualiza README y bitácora"** — reglas movidas al dominio (`ArmaDeFuego.reglaDeDano(...)`, `ArmaDeFuego.reglaDeCargaMunicion(...)`); `ArmaService` las dispara; `GET /` actualizado; `README.md` actualizado (H2/JPA, CRUD persistido, reglas CS2, jerarquía/handlers, decisiones POO-08); bitácora reestructurada al formato de prompts.
+
+9. **"Saca el apartado de cambios realizados ahora de la bitacora, sigue la estructura de resumen de prompts establecida"** — se eliminó la sección `Cambios realizados ahora` y se consolidó todo en `Resumen de los prompts` (entradas 1-9).
