@@ -27,3 +27,12 @@
 8. **"Verifica consigna POO-08... cambia las reglas de negocio... actualiza README y bitácora"** — reglas movidas al dominio (`ArmaDeFuego.reglaDeDano(...)`, `ArmaDeFuego.reglaDeCargaMunicion(...)`); `ArmaService` las dispara; `GET /` actualizado; `README.md` actualizado (H2/JPA, CRUD persistido, reglas CS2, jerarquía/handlers, decisiones POO-08); bitácora reestructurada al formato de prompts.
 
 9. **"Saca el apartado de cambios realizados ahora de la bitacora, sigue la estructura de resumen de prompts establecida"** — se eliminó la sección `Cambios realizados ahora` y se consolidó todo en `Resumen de los prompts` (entradas 1-9).
+
+10. **"Haz todo menos la consigna 9 (Insomnia)"** — cierre de POO-08 sin la colección Insomnia:
+  - **Persistencia del dominio:** `Arma` pasó a ser `@Entity` raíz con `@Inheritance(SINGLE_TABLE)` y `@DiscriminatorColumn(name = "tipo_arma")`; `ArmaDeFuego`/`Arrojadiza` son `@MappedSuperclass`; las concretas llevan `@DiscriminatorValue`. Se eliminó `ArmaEntity` y el paquete `entity`.
+  - **Jackson y JPA:** `id` autogenerado y de solo lectura; `tipoArma` con `@JsonTypeInfo`/`@JsonSubTypes`; `@Column` renombradas para evitar colisiones de campos homónimos en la tabla única; constructores con parámetros marcados con `@JsonCreator(mode = DISABLED)` para que Jackson use el constructor sin argumentos y los setters.
+  - **CRUD REST:** recurso `/api/armas` (reemplaza `/api/armas-crud`) con POST→201, GET/GET{id}, PUT, DELETE→204, filtros `nombre`/`precioMax` y operaciones `POST /{id}/dano` y `POST /{id}/cargar-municion`. `ArmaNoEncontradaException` + handler 404 (`ARMA_NO_ENCONTRADA`).
+  - **Simulación:** `POST /api/armas/simulacion` con DTOs `SimulacionRequest`/`SimulacionResponse`; Fusil daña a Humo, Pistola recarga munición y los tres cambios se persisten en una transacción. La respuesta informa clases, valores antes/después, daño aplicado y munición recargada.
+  - **Pruebas:** `ArmaCrudControllerTest` (crear/listar/obtener/actualizar/borrar, validaciones, 404, simulación feliz y errores de daño/munición) y nuevas pruebas de dominio para `dispararA`, `recargar` y `recibirDano`; `./mvnw test` BUILD SUCCESS (34 tests).
+  - **Documentación:** README actualizado (modelo persistido, tabla de endpoints, simulación, reglas, Mermaid, decisiones), nuevo `docs/especificaciones-poo08-cs2.md` y esta entrada de bitácora. Commit de código `2668068`.
+  - **Exclusión:** la consigna 9 (colección Insomnia) no se implementó por pedido explícito.

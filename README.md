@@ -1,6 +1,6 @@
 # cs2-armas-api
 
-Servicio HTTP construido con **Spring Boot** (Maven, Java 21, Spring Web + Spring Data JPA + H2) sobre el modelado de **Counter-Strike 2**: inventario de armas con herencia, sobreescritura/sobrecarga, ocultamiento, CRUD REST persistido y reglas de negocio de **daño** y **carga de munición**.
+Servicio HTTP construido con **Spring Boot** (Maven, Java 21, Spring Web + Spring Data JPA + H2) sobre el modelado de **Counter-Strike 2**: inventario de armas con herencia, sobreescritura/sobrecarga, ocultamiento, CRUD REST persistido, reglas de negocio de **daño** y **carga de munición**, y una **simulación** que involucra tres clases y persiste el resultado.
 
 Ejercicios: POO-06/07/08 del taller de Git y Lenguaje de Programación 3 (CYT646).  
 POO-08: <https://github.com/alefq/afq-taller-git-2024/blob/main/docs/ejercicio-poo-08-crud-h2-insomnia-2026-10-28.md>
@@ -11,7 +11,7 @@ POO-08: <https://github.com/alefq/afq-taller-git-2024/blob/main/docs/ejercicio-p
 ./mvnw spring-boot:run
 ```
 
-Servicio: `http://localhost:8080`. Pruebas:
+Servicio: `http://localhost:8080`. Pruebas (34 tests: dominio, CRUD/simulación y endpoints POO-06/07):
 
 ```bash
 ./mvnw test
@@ -28,112 +28,307 @@ Configuración en `src/main/resources/application.properties`:
 
 Consola H2: `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:mem:armasdb`, usuario `sa`).
 
+## Modelo persistido: la jerarquía del dominio es la jerarquía JPA
+
+No hay una entidad paralela: **`Arma` es la entidad raíz**. La jerarquía de POO se persiste con una única tabla y un discriminador.
+
+- `Arma`: `@Entity`, `@Table(name = "armas")`, `@Inheritance(SINGLE_TABLE)` y `@DiscriminatorColumn(name = "tipo_arma")`.
+- `ArmaDeFuego` y `Arrojadiza`: `@MappedSuperclass` (ramas intermedias, sin tabla propia).
+- `Fusil`, `Escopeta`, `Pistola`, `Francotirador`, `Humo`, `Granada` y `Flash`: `@Entity` + `@DiscriminatorValue` (`FUSIL`, `ESCOPETA`, `PISTOLA`, `FRANCOTIRADOR`, `HUMO`, `GRANADA`, `FLASH`).
+- `id`: `@Id @GeneratedValue(strategy = IDENTITY)` y `@JsonProperty(access = READ_ONLY)`; lo asigna H2 y no se envía al crear.
+- Jackson distingue el subtipo con la propiedad `tipoArma` (`@JsonTypeInfo` / `@JsonSubTypes`). Los constructores sin argumentos se usan para JPA/Jackson; los constructores con parámetros están marcados con `@JsonCreator(mode = DISABLED)` para que Jackson no los confunda con creadores.
+- Columnas de campos homónimos entre subtipos se renombran con `@Column` para evitar colisiones en `SINGLE_TABLE` (por ejemplo `dano_explosivo`, `fusil_automatica`, `pistola_silenciador`).
+
 ## CRUD REST (persistido en H2)
 
-Recurso: `/api/armas-crud` (la URL nombra el recurso; el verbo HTTP indica la operación). El `id` lo asigna la persistencia (JPA/H2); no se envía en el `POST` de creación. El CRUD usa `ArmaRepository` (Spring Data, interfaz) y `ArmaService`; el controller no guarda listas en memoria.
+Recurso: `/api/armas`. El verbo HTTP indica la operación. El controller solo traduce HTTP; las validaciones y reglas viven en `ArmaService` y en el dominio.
 
 | Operación | HTTP | URL | Éxito |
 |---|---|---|---|
-| Crear | `POST` | `/api/armas-crud` | 201 |
-| Listar | `GET` | `/api/armas-crud` | 200 |
-| Obtener por id | `GET` | `/api/armas-crud/{id}` | 200 / 404 |
-| Actualizar | `PUT` | `/api/armas-crud/{id}` | 200 |
-| Borrar | `DELETE` | `/api/armas-crud/{id}` | 204 |
+| Crear | `POST` | `/api/armas` | 201 |
+| Listar / filtrar | `GET` | `/api/armas?nombre=...&precioMax=...` | 200 |
+| Obtener por id | `GET` | `/api/armas/{id}` | 200 / 404 |
+| Actualizar | `PUT` | `/api/armas/{id}` | 200 |
+| Borrar | `DELETE` | `/api/armas/{id}` | 204 |
+| Aplicar daño | `POST` | `/api/armas/{id}/dano` | 200 |
+| Cargar munición | `POST` | `/api/armas/{id}/cargar-municion` | 200 |
+| Simulación | `POST` | `/api/armas/simulacion` | 200 |
+
+Filtros de listado: `nombre` (contiene, sin distinguir mayúsculas) y `precioMax` (precio menor o igual). Si se envía `nombre`, tiene prioridad.
+
+### Crear un Fusil
 
 ```bash
-curl -X POST "http://localhost:8080/api/armas-crud" -H "Content-Type: application/json" \
-  -d '{"nombre":"AK-47","precio":2700,"tipo":"Fusil","dano":36,"municionActual":30,"municionMaxima":30}'
-curl "http://localhost:8080/api/armas-crud"
-curl "http://localhost:8080/api/armas-crud/1"
-curl -X PUT "http://localhost:8080/api/armas-crud/1" -H "Content-Type: application/json" \
-  -d '{"nombre":"M4A1-S","precio":3100,"tipo":"Fusil","dano":33,"municionActual":25,"municionMaxima":25}'
-curl -X DELETE "http://localhost:8080/api/armas-crud/1" -i
+curl -X POST "http://localhost:8080/api/armas" -H "Content-Type: application/json" \
+  -d '{
+    "tipoArma": "FUSIL",
+    "nombre": "AK-47",
+    "precio": 2700,
+    "durabilidad": 100,
+    "dano": 36,
+    "precision": 71,
+    "recarga": 2.4,
+    "velocidad": 600,
+    "municionActual": 30,
+    "municionMaxima": 30,
+    "automatica": true,
+    "mira": 2,
+    "retroceso": 3,
+    "silenciador": false
+  }'
 ```
 
-## Reglas de negocio del juego (CS2) y excepciones
+### Crear un Humo
 
-Las reglas viven en el **dominio** (`ArmaDeFuego.reglaDeDano` y `ArmaDeFuego.reglaDeCargaMunicion`) y el controller las dispara a través del servicio; el dominio lanza la excepción hija correspondiente.
+```bash
+curl -X POST "http://localhost:8080/api/armas" -H "Content-Type: application/json" \
+  -d '{
+    "tipoArma": "HUMO",
+    "nombre": "Humo de cortina",
+    "precio": 300,
+    "durabilidad": 100,
+    "tipo": "humo",
+    "radio": 6.0,
+    "distancia": 25.0,
+    "duracion": 18.0
+  }'
+```
 
-1. **Daño:** el daño aplicado a un arma de fuego no puede ser negativo ni exceder el límite permitido (`municionMaxima * 5`) para ese arma.
-2. **Carga de munición:** la cantidad a cargar debe ser > 0 y `municionActual + cantidad` no puede superar `municionMaxima`.
+### Crear una Pistola
 
-Jerarquía de excepciones (no comprobadas, `RuntimeException` vía `ArmaDominioException`, coherente con el dominio/servicio Spring):
+```bash
+curl -X POST "http://localhost:8080/api/armas" -H "Content-Type: application/json" \
+  -d '{
+    "tipoArma": "PISTOLA",
+    "nombre": "USP-S",
+    "precio": 200,
+    "durabilidad": 100,
+    "dano": 35,
+    "precision": 70,
+    "recarga": 1.5,
+    "velocidad": 352,
+    "municionActual": 12,
+    "municionMaxima": 20,
+    "automatica": false,
+    "silenciador": true
+  }'
+```
+
+### Listar, obtener, actualizar y borrar
+
+```bash
+curl "http://localhost:8080/api/armas"
+curl "http://localhost:8080/api/armas?nombre=AK"
+curl "http://localhost:8080/api/armas?precioMax=500"
+curl "http://localhost:8080/api/armas/1"
+
+curl -X PUT "http://localhost:8080/api/armas/1" -H "Content-Type: application/json" \
+  -d '{
+    "tipoArma": "FUSIL",
+    "nombre": "M4A1-S",
+    "precio": 3100,
+    "durabilidad": 90,
+    "dano": 33,
+    "precision": 66,
+    "recarga": 3.1,
+    "velocidad": 585,
+    "municionActual": 25,
+    "municionMaxima": 25,
+    "automatica": false,
+    "mira": 4,
+    "retroceso": 2,
+    "silenciador": true
+  }'
+
+curl -X DELETE "http://localhost:8080/api/armas/1" -i
+```
+
+## Simulación REST que involucra tres clases y persiste el resultado
+
+La simulación usa tres armas ya persistidas y tres comportamientos distintos del dominio:
+
+1. Un **Fusil** dispara y daña a un **Humo** (baja `durabilidad`).
+2. Una **Pistola** recarga munición (sube `municionActual`).
+3. Los tres cambios se guardan con JPA y se pueden verificar con `GET` posteriores.
+
+Request (`POST /api/armas/simulacion`):
+
+```json
+{
+  "atacanteId": 1,
+  "objetivoId": 2,
+  "recargadorId": 3,
+  "distancia": 0,
+  "critico": false,
+  "municion": 5
+}
+```
+
+Con el Fusil AK-47 (36 de daño), el Humo (100 de durabilidad) y la Pistola USP-S (12/20), la respuesta es:
+
+```json
+{
+  "atacanteClase": "Fusil",
+  "atacanteMunicionAntes": 30,
+  "atacanteMunicionDespues": 29,
+  "objetivoClase": "Humo",
+  "objetivoDurabilidadAntes": 100,
+  "objetivoDurabilidadDespues": 64,
+  "recargadorClase": "Pistola",
+  "recargadorMunicionAntes": 12,
+  "recargadorMunicionDespues": 17,
+  "danoAplicado": 36,
+  "municionRecargada": 5
+}
+```
+
+Verificación del estado persistido:
+
+```bash
+curl "http://localhost:8080/api/armas/1"   # municionActual = 29
+curl "http://localhost:8080/api/armas/2"   # durabilidad = 64
+curl "http://localhost:8080/api/armas/3"   # municionActual = 17
+```
+
+La simulación exige tres ids distintos, que el atacante y el recargador sean `ArmaDeFuego`, y que el disparo/recarga sean legales. Si algo falla, la transacción revierte y no queda estado parcial.
+
+## Operaciones individuales de daño y munición
+
+```bash
+curl -X POST "http://localhost:8080/api/armas/1/dano" \
+  -H "Content-Type: application/json" -d '{"dano":40}'
+
+curl -X POST "http://localhost:8080/api/armas/3/cargar-municion" \
+  -H "Content-Type: application/json" -d '{"cantidad":5}'
+```
+
+- `dano` se aplica con `Arma.recibirDano(int)`: no puede ser negativo ni superar la durabilidad disponible.
+- `cargar-municion` solo está disponible para `ArmaDeFuego`: la cantidad debe ser mayor a 0 y no superar `municionMaxima`.
+
+## Reglas de negocio y excepciones
+
+Las reglas viven en el **dominio** y el servicio las dispara; el controller no asigna estado inválido directamente.
+
+- `Arma.recibirDano(int)`: valida daño no negativo y no mayor a la durabilidad; resta durabilidad.
+- `ArmaDeFuego.dispararA(Arma, int, boolean)`: exige munición disponible, calcula el daño con las sobrecargas de `calcularDano`, aplica `recibirDano` y descuenta una bala.
+- `ArmaDeFuego.recargar(int)`: valida cantidad positiva y que `municionActual + cantidad <= municionMaxima`.
+- `ArmaDeFuego.calcularDano()` / `calcularDano(int)` / `calcularDano(int, boolean)`: daño base, ajuste por distancia (`max(1, dano - distancia / 10)`) y crítico (x2).
+- Setters de `Arma`, `ArmaDeFuego` y `Arrojadiza`: rechazan nombre vacío, precio/duración/radio/distancia no válidos, precisión fuera de 0–100, daño negativo y munición fuera de rango.
+
+Jerarquía de excepciones (no comprobadas, `RuntimeException` vía `ArmaDominioException`):
+
 - `ArmaDominioException` (base)
   - `ArmaInvalidaException`
   - `DanoInvalidoException`
   - `CargaMunicionException`
+  - `ArmaNoEncontradaException`
 
-Handlers HTTP (uno por tipo, `ApiExceptionHandler`): cada tipo responde 400 con `tipo` distinto en JSON (`ARMA_INVALIDA`, `DANO_INVALIDO`, `CARGA_MUNICION_INVALIDA`, fallback `DOMINIO`).
+Handlers HTTP (`ApiExceptionHandler`):
 
-Endpoints que aplican reglas persistiendo estado:
-```bash
-curl -X POST "http://localhost:8080/api/armas-crud/1/dano" -H "Content-Type: application/json" -d '{"dano":40}'
-curl -X POST "http://localhost:8080/api/armas-crud/1/cargar-municion" -H "Content-Type: application/json" -d '{"cantidad":5}'
-```
+| Excepción | HTTP | `tipo` en JSON |
+|---|---|---|
+| `ArmaNoEncontradaException` | 404 | `ARMA_NO_ENCONTRADA` |
+| `ArmaInvalidaException` | 400 | `ARMA_INVALIDA` |
+| `DanoInvalidoException` | 400 | `DANO_INVALIDO` |
+| `CargaMunicionException` | 400 | `CARGA_MUNICION_INVALIDA` |
+| `ArmaDominioException` (resto) | 400 | `DOMINIO` |
+| Parámetro de URL inválido | 400 | `PARAMETRO_INVALIDO` |
 
 ## Endpoints POO-06/07 (demostración de modelado)
 
-- `GET /` — estado del servicio
-- `GET /api/armas/descripcion` — `describir()` abstracto/sobreescrito (polimorfismo)
-- `GET /api/armas/equipables` — capacidad `Equipable` (interfaz) entre familias distintas
-- `GET /api/armas/ui` — capacidad `UIcapable` en todas las clases
-- `GET /api/armas/fusil?...` / `GET /api/armas/humo?...` — construcción desde URL y sobrecarga
+- `GET /` — estado del servicio y lista de endpoints.
+- `GET /api/armas/descripcion` — `describir()` abstracto/sobreescrito (polimorfismo).
+- `GET /api/armas/equipables` — capacidad `Equipable` (interfaz) entre familias distintas.
+- `GET /api/armas/ui` — capacidad `UIcapable` en todas las clases.
+- `GET /api/armas/fusil?...` / `GET /api/armas/humo?...` — construcción desde URL y sobrecarga.
 
 ## Diagrama (resumen POO-08)
 
 ```mermaid
 classDiagram
-    class ArmaDominioException
-    class ArmaInvalidaException
-    class DanoInvalidoException
-    class CargaMunicionException
-    ArmaDominioException <|-- ArmaInvalidaException
-    ArmaDominioException <|-- DanoInvalidoException
-    ArmaDominioException <|-- CargaMunicionException
-
-    class ArmaDeFuego {
-        +reglaDeDano(danoAplicado, municionMaxima) int
-        +reglaDeCargaMunicion(municionActual, cantidad, municionMaxima) int
+    class Arma {
+        <<Entity>>
+        -int id
+        -String nombre
+        -double precio
+        -int durabilidad
+        +recibirDano(int)
+        +describir()* String
     }
-    class ArmaEntity
+    class ArmaDeFuego {
+        <<MappedSuperclass>>
+        -int dano
+        -int precision
+        -double recarga
+        -double velocidad
+        -int municionActual
+        -int municionMaxima
+        +calcularDano() int
+        +calcularDano(int) int
+        +calcularDano(int, boolean) int
+        +dispararA(Arma, int, boolean) int
+        +recargar(int) int
+    }
+    class Arrojadiza {
+        <<MappedSuperclass>>
+        -String tipo
+        -double radio
+        -double distancia
+        -double duracion
+    }
+    Arma <|-- ArmaDeFuego
+    Arma <|-- Arrojadiza
+    ArmaDeFuego <|-- Fusil
+    ArmaDeFuego <|-- Escopeta
+    ArmaDeFuego <|-- Pistola
+    Fusil <|-- Francotirador
+    Arrojadiza <|-- Humo
+    Arrojadiza <|-- Granada
+    Arrojadiza <|-- Flash
+
     class ArmaRepository
     class ArmaService {
-        +aplicarDano(id,dano) ArmaEntity
-        +cargarMunicion(id,cantidad) ArmaEntity
+        +findAll(nombre, precioMax) List~Arma~
+        +findById(id) Arma
+        +create(arma) Arma
+        +update(id, datos) Arma
+        +delete(id) void
+        +aplicarDano(id, dano) Arma
+        +cargarMunicion(id, cantidad) Arma
+        +simular(request) SimulacionResponse
     }
     class ArmaCrudController
     class ApiExceptionHandler
 
-    ArmaRepository ..> ArmaEntity : persiste
+    ArmaRepository ..> Arma : persiste
     ArmaService --> ArmaRepository : usa
-    ArmaService ..> ArmaDeFuego : dispara reglas de dominio
+    ArmaService ..> Arma : reglas de dominio
     ArmaCrudController --> ArmaService : usa
     ApiExceptionHandler ..> ArmaDominioException : maneja por tipo
-    ApiExceptionHandler ..> DanoInvalidoException
-    ApiExceptionHandler ..> CargaMunicionException
-    ApiExceptionHandler ..> ArmaInvalidaException
 ```
 
-## Decisiones y notas (POO-08, trabajo actual)
+## Decisiones y notas (POO-08)
 
-- **Recurso/verbos:** la URL nombra el recurso (`/api/armas-crud`); el verbo HTTP expresa la operación (POST/GET/PUT/DELETE).
-- **Identidad:** `id` autogenerado por JPA/H2 (`@GeneratedValue` en `ArmaEntity`); se omite al crear.
-- **PUT:** reemplaza el estado editable del recurso (campos enviados) para el ítem indicado.
+- **Persistencia:** se anotó el dominio directamente; `Arma` es la entidad raíz y no existe una `ArmaEntity` paralela.
+- **Herencia JPA:** `SINGLE_TABLE` con discriminador `tipo_arma`; las ramas intermedias son `@MappedSuperclass`.
+- **Identidad:** `id` autogenerado por JPA/H2 y de solo lectura en JSON; se omite al crear.
+- **Subtipo en JSON:** la propiedad `tipoArma` selecciona la clase concreta; las respuestas también la incluyen.
+- **PUT:** reemplaza el estado editable del recurso; no se permite cambiar el subtipo (`Fusil` sigue siendo `Fusil`).
 - **DELETE:** borra el ítem persistido y responde 204; un GET posterior por id devuelve 404.
-- **Ocultamiento:** validaciones/invariantes se aplican en dominio/service; el controller no asigna estado inválido directamente.
-- **Reglas en dominio:** las dos reglas de negocio (daño y carga de munición) están implementadas como métodos de `ArmaDeFuego` y lanzan excepciones hijas del dominio.
-
-> Pendiente para cierre completo de POO-08: colección Insomnia versionada, simulación única REST que involucre las 3 clases y persista resultado visible en GET posterior, y ajustes de persistencia/Jackson para discriminación de subtipo según consigna.
+- **Ocultamiento:** validaciones e invariantes se aplican en dominio/service; el controller no asigna estado inválido directamente.
+- **Reglas en dominio:** daño, disparo y recarga son métodos del dominio (`recibirDano`, `dispararA`, `recargar`) y lanzan excepciones hijas.
+- **Consigna 9 (Insomnia):** excluida de esta entrega por pedido explícito; el resto de POO-08 queda cubierto.
 
 ## Estructura
 
 ```
 src/main/java/py/edu/uc/lp3/Application.java
-src/main/java/py/edu/uc/lp3/domain/                     modelado CS2 (POO-06/07)
-src/main/java/py/edu/uc/lp3/entity/ArmaEntity.java     entidad JPA
+src/main/java/py/edu/uc/lp3/domain/                     modelado CS2 + entidades JPA
+src/main/java/py/edu/uc/lp3/exceptions/                 jerarquía de excepciones del dominio
 src/main/java/py/edu/uc/lp3/repository/ArmaRepository   Spring Data (interfaz)
-src/main/java/py/edu/uc/lp3/service/ArmaService.java    negocio/validación + reglas
+src/main/java/py/edu/uc/lp3/service/ArmaService.java    negocio/validación + reglas + simulación
 src/main/java/py/edu/uc/lp3/rest/controller/            REST + handlers
+src/main/java/py/edu/uc/lp3/rest/dto/                   request/response de simulación
 src/test/java/py/edu/uc/lp3/                           pruebas dominio/HTTP
 ```
 
