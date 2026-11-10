@@ -1,6 +1,6 @@
 # cs2-armas-api
 
-Servicio HTTP construido con **Spring Boot** (Maven, Java 21, Spring Web + Spring Data JPA + H2) sobre el modelado de **Counter-Strike 2**: inventario de armas con herencia, sobreescritura/sobrecarga, ocultamiento, CRUD REST persistido, reglas de negocio de **daño** y **carga de munición**, y una **simulación** que involucra tres clases y persiste el resultado.
+Servicio HTTP construido con **Spring Boot** (Maven, Java 21, Spring Web + Spring Data JPA + H2) sobre el modelado de **Counter-Strike 2**: inventario de armas con herencia, sobreescritura/sobrecarga, ocultamiento, CRUD REST persistido, reglas de negocio de **daño** y **carga de munición**, una **simulación** que involucra tres clases y persiste el resultado, y una **colección Insomnia** exportable para probar todo el flujo.
 
 Ejercicios: POO-06/07/08 del taller de Git y Lenguaje de Programación 3 (CYT646).  
 POO-08: <https://github.com/alefq/afq-taller-git-2024/blob/main/docs/ejercicio-poo-08-crud-h2-insomnia-2026-10-28.md>
@@ -242,6 +242,13 @@ Handlers HTTP (`ApiExceptionHandler`):
 - `GET /api/armas/ui` — capacidad `UIcapable` en todas las clases.
 - `GET /api/armas/fusil?...` / `GET /api/armas/humo?...` — construcción desde URL y sobrecarga.
 
+## Colección Insomnia (consigna 9)
+
+- Exportable: [`docs/insomnia-poo08.json`](docs/insomnia-poo08.json)
+- Guía: [`docs/insomnia-poo08.md`](docs/insomnia-poo08.md)
+
+La colección contiene 24 requests en cinco carpetas (`00 - Setup`, `01 - CRUD`, `02 - Interfaces`, `03 - Simulación`, `04 - Excepciones`), con un environment `Local` (`baseUrl`, `fusilId`, `humoId`, `pistolaId`, `tempId`). Importar en Insomnia desde **Import/Export → Import Data → From File**, activar `Local` y seguir el orden de la guía.
+
 ## Diagrama (resumen POO-08)
 
 ```mermaid
@@ -307,17 +314,29 @@ classDiagram
     ApiExceptionHandler ..> ArmaDominioException : maneja por tipo
 ```
 
-## Decisiones y notas (POO-08)
+## Qué hay que pensar (respuestas)
 
-- **Persistencia:** se anotó el dominio directamente; `Arma` es la entidad raíz y no existe una `ArmaEntity` paralela.
-- **Herencia JPA:** `SINGLE_TABLE` con discriminador `tipo_arma`; las ramas intermedias son `@MappedSuperclass`.
-- **Identidad:** `id` autogenerado por JPA/H2 y de solo lectura en JSON; se omite al crear.
-- **Subtipo en JSON:** la propiedad `tipoArma` selecciona la clase concreta; las respuestas también la incluyen.
-- **PUT:** reemplaza el estado editable del recurso; no se permite cambiar el subtipo (`Fusil` sigue siendo `Fusil`).
-- **DELETE:** borra el ítem persistido y responde 204; un GET posterior por id devuelve 404.
-- **Ocultamiento:** validaciones e invariantes se aplican en dominio/service; el controller no asigna estado inválido directamente.
-- **Reglas en dominio:** daño, disparo y recarga son métodos del dominio (`recibirDano`, `dispararA`, `recargar`) y lanzan excepciones hijas.
-- **Consigna 9 (Insomnia):** excluida de esta entrega por pedido explícito; el resto de POO-08 queda cubierto.
+Estas respuestas describen la implementación actual; si el código cambia, deben cambiar con él.
+
+1. **Recurso y verbo.** El sustantivo de la API es `armas` y la colección vive en `/api/armas`. El verbo HTTP expresa la operación: `POST` crea, `GET` lee la colección o un ítem, `PUT` actualiza y `DELETE` borra. La simulación se expone como un subrecurso de acción, `POST /api/armas/simulacion`, y las operaciones de daño/munición como `POST /api/armas/{id}/dano` y `POST /api/armas/{id}/cargar-municion`: son comandos que cambian estado, no lecturas.
+
+2. **Identidad.** La clave es `id`, un `int` asignado por JPA/H2 con `@GeneratedValue(strategy = IDENTITY)`. El JSON de creación la omite: el campo es `@JsonProperty(access = READ_ONLY)`, así que si se envía Jackson la ignora. El service además rechaza un `id` distinto de 0 si el objeto se construye por otra vía. La persistencia asigna el id y el `POST` lo devuelve en la respuesta.
+
+3. **Herencia y tablas.** Se eligió `SINGLE_TABLE` con `@Inheritance` y `@DiscriminatorColumn(name = "tipo_arma")` porque toda la familia comparte identidad y campos comunes, y una sola tabla/repositorio alcanza para el CRUD y las consultas polimórficas. `Arma` es la entidad raíz (no existe una `ArmaEntity` paralela); `ArmaDeFuego` y `Arrojadiza` son `@MappedSuperclass` (ramas intermedias sin tabla) y las clases concretas son `@Entity` con `@DiscriminatorValue`. En JSON el subtipo se distingue con `tipoArma` mediante `@JsonTypeInfo`/`@JsonSubTypes`; las columnas homónimas se renombraron con `@Column` para evitar colisiones en la tabla única. El costo es que las columnas de los subtipos quedan anulables.
+
+4. **Interfaz y repositorio.** `ArmaRepository` es una interfaz que extiende `JpaRepository<Arma, Integer>`; Spring Data genera la implementación y el service depende del contrato, no de una clase concreta. El controller depende de `ArmaService`, y el service del repositorio. Eso permite usar consultas derivadas (`findByNombreContainingIgnoreCase`, `findByPrecioLessThanEqual`, `findByDurabilidadLessThan`) sin escribir SQL/DAO a mano, facilita mockear el repositorio en pruebas y cambiar la implementación sin tocar el controller. Es la misma idea de POO-07: `Equipable` y `UIcapable` son protocolos; el cliente usa los mensajes y no necesita conocer la clase que los implementa.
+
+5. **Protocolo del dominio.** `Equipable` declara `ranura()` y un `mensajeDeEquipado()` por defecto. Lo implementan `Fusil` (familia `ArmaDeFuego`) y `Granada` (familia `Arrojadiza`), así que `GET /api/armas/equipables` trabaja con `List<Equipable>` y habla con instancias de familias distintas. También existe `UIcapable` (`imagen()`, `sonido()`), implementada en la raíz `Arma`, y la usa `GET /api/armas/ui`.
+
+6. **Ocultamiento.** Las reglas numéricas las sostienen los setters del dominio (`setNombre`, `setPrecio`, `setDurabilidad`, `setDano`, `setPrecision`, `setMunicionActual`, `setMunicionMaxima`, etc.) y los métodos de juego (`recibirDano`, `dispararA`, `recargar`); `ArmaService.validar` vuelve a validar antes de `save`. JPA accede por campo (el `@Id` está en el campo), así que al hidratar no llama a los setters; la barrera efectiva es que los objetos se validan al entrar por JSON/service y el repositorio solo recibe objetos ya validados en esta aplicación. El request `01 POST ilegal - ArmaInvalidaException` de `04 - Excepciones` envía `precio: -1`; el setter lo rechaza durante la deserialización, el handler responde 400 `ARMA_INVALIDA` y un `GET /api/armas` posterior muestra la misma cantidad de armas que antes.
+
+7. **PUT y PATCH.** Solo está implementado `PUT /api/armas/{id}`; no hay `PATCH`. El `PUT` reemplaza el estado editable del recurso: conserva el `id`, no permite cambiar el subtipo y copia todas las propiedades del cuerpo sobre el existente. Un campo omitido no se conserva: Jackson lo deja en el valor por defecto de Java (`null`, `0`, `false`) y `BeanUtils.copyProperties` lo sobrescribe; si ese valor rompe una invariante (por ejemplo, `nombre` ausente), la respuesta es 400. Por eso el cliente debe enviar la representación completa.
+
+8. **DELETE.** Borrar significa eliminar físicamente la fila: `ArmaService.delete` busca por id y llama a `armaRepository.delete(arma)`; responde 204 y un `GET` posterior por ese id da 404. Hoy el verbo no invoca un mensaje de dominio: el service orquesta y el repositorio borra. Si el modelo necesitara borrado lógico, habría que agregar un mensaje de dominio (por ejemplo, cambiar un estado) y ajustar el `GET`/`DELETE`.
+
+9. **Dos reglas.** (1) `Fusil.dispararA(...)` consume una bala del Fusil, calcula el daño con `calcularDano` y se lo aplica al Humo, que baja su durabilidad. (2) `Pistola.recargar(...)` aumenta la munición de la Pistola sin superar su máximo. Participan las tres clases: Fusil, Humo y Pistola. El recurso es `POST /api/armas/simulacion`; la operación es transaccional y los `GET` posteriores muestran el estado persistido (Fusil 29, Humo 64, Pistola 17 en la corrida base).
+
+10. **Excepciones.** La base es `ArmaDominioException extends RuntimeException` (no comprobada: las reglas del dominio no obligan a `try/catch` en cada llamada y el handler las traduce a HTTP). Las hijas son `ArmaInvalidaException` (estado/construcción inválida), `DanoInvalidoException` (daño negativo o mayor a la durabilidad), `CargaMunicionException` (recarga o munición fuera de rango) y `ArmaNoEncontradaException` (recurso inexistente). `ApiExceptionHandler` es un `@RestControllerAdvice` con un método `@ExceptionHandler` por tipo: 404 para `ARMA_NO_ENCONTRADA` y 400 para `ARMA_INVALIDA`, `DANO_INVALIDO` y `CARGA_MUNICION_INVALIDA`; además hay un handler general para `ArmaDominioException` (`DOMINIO`) por si aparece otra hija. El JSON de error lleva `tipo`, `error` y `rechazo`. Un id inexistente y una regla de juego incumplida son tipos distintos, y la colección Insomnia tiene un request por cada hija.
 
 ## Estructura
 
@@ -330,6 +349,8 @@ src/main/java/py/edu/uc/lp3/service/ArmaService.java    negocio/validación + re
 src/main/java/py/edu/uc/lp3/rest/controller/            REST + handlers
 src/main/java/py/edu/uc/lp3/rest/dto/                   request/response de simulación
 src/test/java/py/edu/uc/lp3/                           pruebas dominio/HTTP
+docs/insomnia-poo08.json                               colección exportable (consigna 9)
+docs/insomnia-poo08.md                                 guía de uso de la colección
 ```
 
 ## Licencia

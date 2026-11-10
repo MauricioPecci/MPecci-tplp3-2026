@@ -31,9 +31,9 @@ Completar el servicio HTTP de CS2 con un **CRUD REST persistido en H2** para la 
 
 7. **Simulación REST que involucra tres clases y persiste.** `POST /api/armas/simulacion` recibe `atacanteId`, `objetivoId`, `recargadorId`, `distancia`, `critico` y `municion`. Un **Fusil** dispara y daña a un **Humo**; una **Pistola** recarga munición. Los tres cambios se guardan con JPA y se verifican con `GET` posteriores. La operación es transaccional: si una regla falla, no queda estado parcial.
 
-8. **Documentación y diagrama.** `README.md` describe el modelo persistido, los endpoints, las reglas, la simulación y las decisiones; incluye un diagrama Mermaid alineado con `src/`.
+8. **Documentación y diagrama.** `README.md` describe el modelo persistido, los endpoints, las reglas, la simulación y las decisiones; responde las preguntas de «Qué hay que pensar» y incluye un diagrama Mermaid alineado con `src/`.
 
-9. **Colección Insomnia (consigna 9).** Excluida de esta entrega por pedido explícito. El resto de POO-08 queda cubierto.
+9. **Colección Insomnia (consigna 9).** Incluida como colección exportable en [`docs/insomnia-poo08.json`](insomnia-poo08.json), con guía en [`docs/insomnia-poo08.md`](insomnia-poo08.md). Contiene CRUD, filtros, endpoints de interfaces, simulación y un request por cada excepción hija, con environment `Local` y requests encadenados por variables (`fusilId`, `humoId`, `pistolaId`, `tempId`).
 
 ## 3. Cómo probarlo
 
@@ -97,9 +97,13 @@ Respuesta esperada de la simulación (extracto):
 }
 ```
 
+Alternativa con Insomnia: importar `docs/insomnia-poo08.json`, activar el environment `Local` y seguir `docs/insomnia-poo08.md`.
+
 ## 4. Enlace al commit de la solución
 
-<https://github.com/MauricioPecci/MPecci-tplp3-2026/commit/266806889448df36305a78a309e449f1e61cca55>
+Commit de código: <https://github.com/MauricioPecci/MPecci-tplp3-2026/commit/266806889448df36305a78a309e449f1e61cca55>
+
+La colección Insomnia y su guía están en `docs/insomnia-poo08.json` y `docs/insomnia-poo08.md`.
 
 ## 5. Recorrido de corrección (5 a 7 minutos)
 
@@ -107,4 +111,5 @@ Respuesta esperada de la simulación (extracto):
 2. Leer el README: modelo persistido (`SINGLE_TABLE` + `tipo_arma`), tabla de endpoints, simulación y decisiones.
 3. Ver `Arma` como `@Entity` raíz, `ArmaDeFuego`/`Arrojadiza` como `@MappedSuperclass` y las concretas con `@DiscriminatorValue`; confirmar que no queda `ArmaEntity`.
 4. Arrancar `./mvnw spring-boot:run` y correr la secuencia curl: crear las tres armas, ejecutar la simulación y verificar con `GET` que la munición del Fusil, la durabilidad del Humo y la munición de la Pistola cambiaron y persistieron.
-5. Pregunta de anclaje: el controller solo traduce HTTP; el service valida y orquesta; el dominio aplica las reglas y lanza excepciones; el repositorio persiste. Un `POST /api/armas/{id}/dano` con daño mayor a la durabilidad o una recarga que supera el máximo responde 400 y no deja estado parcial.
+5. Importar `docs/insomnia-poo08.json` en Insomnia, activar el environment `Local` y ejecutar las carpetas en orden; `docs/insomnia-poo08.md` detalla los resultados esperados.
+6. Pregunta de anclaje: el controller solo traduce HTTP; el service valida y orquesta; el dominio aplica las reglas y lanza excepciones; el repositorio persiste. Un `POST /api/armas/{id}/dano` con daño mayor a la durabilidad o una recarga que supera el máximo responde 400 y no deja estado parcial.
