@@ -10,7 +10,7 @@ public class Flash extends Arrojadiza {
     private int intensidad;
     private double duracionCeguera;
 
-    public Flash() {
+    protected Flash() {
         super();
         setTipo("cegadora");
         setRadio(5.0);

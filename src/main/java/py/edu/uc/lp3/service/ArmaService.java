@@ -7,6 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 import py.edu.uc.lp3.domain.Arma;
 import py.edu.uc.lp3.domain.ArmaDeFuego;
 import py.edu.uc.lp3.domain.Arrojadiza;
+import py.edu.uc.lp3.domain.Escopeta;
+import py.edu.uc.lp3.domain.Flash;
+import py.edu.uc.lp3.domain.Francotirador;
+import py.edu.uc.lp3.domain.Fusil;
+import py.edu.uc.lp3.domain.Granada;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 import py.edu.uc.lp3.exceptions.ArmaNoEncontradaException;
 import py.edu.uc.lp3.exceptions.CargaMunicionException;
@@ -78,6 +83,9 @@ public class ArmaService {
 
     @Transactional
     public Arma aplicarDano(Integer id, int dano) {
+        if (dano < 0) {
+            throw new DanoInvalidoException("El daño aplicado no puede ser negativo: " + dano);
+        }
         Arma arma = findById(id);
         arma.recibirDano(dano);
         return armaRepository.save(arma);
@@ -85,6 +93,9 @@ public class ArmaService {
 
     @Transactional
     public Arma cargarMunicion(Integer id, int cantidad) {
+        if (cantidad < 0) {
+            throw new CargaMunicionException("La cantidad a recargar no puede ser negativa: " + cantidad);
+        }
         Arma arma = findById(id);
         if (!(arma instanceof ArmaDeFuego fuego)) {
             throw new ArmaInvalidaException("Solo las armas de fuego pueden recargar munición");
@@ -97,6 +108,13 @@ public class ArmaService {
     public SimulacionResponse simular(SimulacionRequest request) {
         if (request == null) {
             throw new ArmaInvalidaException("La simulación no puede ser nula");
+        }
+        if (request.municion() < 0) {
+            throw new CargaMunicionException(
+                    "La munición a recargar no puede ser negativa: " + request.municion());
+        }
+        if (request.distancia() < 0) {
+            throw new ArmaInvalidaException("La distancia no puede ser negativa: " + request.distancia());
         }
 
         Arma atacante = findById(request.atacanteId());
@@ -157,6 +175,14 @@ public class ArmaService {
             if (fuego.getDano() < 0) {
                 throw new DanoInvalidoException("El daño no puede ser negativo: " + fuego.getDano());
             }
+            validarNoNegativo("La precisión", fuego.getPrecision());
+            if (fuego.getPrecision() > 100) {
+                throw new ArmaInvalidaException("La precisión no puede superar 100: " + fuego.getPrecision());
+            }
+            if (fuego.getRecarga() <= 0) {
+                throw new ArmaInvalidaException("La recarga debe ser mayor a 0: " + fuego.getRecarga());
+            }
+            validarNoNegativo("La velocidad de disparo", fuego.getVelocidad());
             if (fuego.getMunicionActual() < 0) {
                 throw new CargaMunicionException(
                         "La munición actual no puede ser negativa: " + fuego.getMunicionActual());
@@ -171,6 +197,18 @@ public class ArmaService {
                                 + ") no puede superar la munición máxima (" + fuego.getMunicionMaxima() + ")");
             }
         }
+        if (arma instanceof Fusil fusil) {
+            validarNoNegativo("La mira", fusil.getMira());
+            validarNoNegativo("El retroceso", fusil.getRetroceso());
+        }
+        if (arma instanceof Escopeta escopeta) {
+            validarNoNegativo("El perdigón", escopeta.getPerdigon());
+            validarNoNegativo("La dispersión", escopeta.getDispersion());
+        }
+        if (arma instanceof Francotirador francotirador) {
+            validarNoNegativo("El alcance", francotirador.getAlcance());
+            validarNoNegativo("El zoom", francotirador.getZoom());
+        }
         if (arma instanceof Arrojadiza arrojadiza) {
             if (arrojadiza.getRadio() <= 0) {
                 throw new ArmaInvalidaException(
@@ -184,6 +222,21 @@ public class ArmaService {
                 throw new ArmaInvalidaException(
                         "La duración debe ser mayor a 0: " + arrojadiza.getDuracion());
             }
+        }
+        if (arma instanceof Granada granada) {
+            if (granada.getDano() < 0) {
+                throw new DanoInvalidoException("El daño explosivo no puede ser negativo: " + granada.getDano());
+            }
+        }
+        if (arma instanceof Flash flash) {
+            validarNoNegativo("La intensidad", flash.getIntensidad());
+            validarNoNegativo("La duración de ceguera", flash.getDuracionCeguera());
+        }
+    }
+
+    private void validarNoNegativo(String campo, double valor) {
+        if (valor < 0) {
+            throw new ArmaInvalidaException(campo + " no puede ser negativo: " + valor);
         }
     }
 }

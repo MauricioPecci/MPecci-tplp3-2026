@@ -8,6 +8,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.reactive.function.client.WebClientException;
+import org.springframework.web.reactive.function.client.WebClientResponseException.NotFound;
 import py.edu.uc.lp3.exceptions.ArmaDominioException;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 import py.edu.uc.lp3.exceptions.ArmaNoEncontradaException;
@@ -62,7 +64,26 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class})
+    @ExceptionHandler(NotFound.class)
+    public ResponseEntity<Map<String, Object>> objetoExternoNoEncontrado(NotFound e) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tipo", "OBJETO_EXTERNO_NO_ENCONTRADO");
+        body.put("error", e.getMessage());
+        body.put("rechazo", "el objeto no existe en la API externa");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
+    @ExceptionHandler(WebClientException.class)
+    public ResponseEntity<Map<String, Object>> servicioExternoNoDisponible(WebClientException e) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tipo", "SERVICIO_EXTERNO_NO_DISPONIBLE");
+        body.put("error", e.getMessage());
+        body.put("rechazo", "la API externa no pudo completar la consulta");
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(body);
+    }
+
+    @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class,
+            IllegalArgumentException.class})
     public ResponseEntity<Map<String, Object>> parametroDeUrlInvalido(Exception e) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("tipo", "PARAMETRO_INVALIDO");

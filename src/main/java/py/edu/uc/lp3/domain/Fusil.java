@@ -20,7 +20,7 @@ public class Fusil extends ArmaDeFuego implements Equipable {
     @Column(name = "fusil_silenciador")
     private boolean silenciador;
 
-    public Fusil() {
+    protected Fusil() {
         super();
         setMira(1);
         setRetroceso(0);

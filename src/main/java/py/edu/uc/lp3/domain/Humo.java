@@ -8,7 +8,7 @@ import jakarta.persistence.Entity;
 @DiscriminatorValue("HUMO")
 public class Humo extends Arrojadiza {
 
-    public Humo() {
+    protected Humo() {
         super();
         setTipo("humo");
         setRadio(6.0);

@@ -15,7 +15,7 @@ public class Pistola extends ArmaDeFuego {
     @Column(name = "pistola_silenciador")
     private boolean silenciador;
 
-    public Pistola() {
+    protected Pistola() {
         super();
     }
 

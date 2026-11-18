@@ -72,6 +72,53 @@ class ArmaCrudControllerTest {
             }
             """;
 
+    private static final String GRANADA_JSON = """
+            {
+              "tipoArma": "GRANADA",
+              "nombre": "Granada HE",
+              "precio": 300,
+              "durabilidad": 100,
+              "tipo": "explosiva",
+              "radio": 4.0,
+              "distancia": 30.0,
+              "duracion": 1.0,
+              "dano": 98,
+              "aturdimiento": false
+            }
+            """;
+
+    private static final String ESCOPETA_JSON = """
+            {
+              "tipoArma": "ESCOPETA",
+              "nombre": "XM1014",
+              "precio": 2000,
+              "durabilidad": 100,
+              "dano": 20,
+              "precision": 55,
+              "recarga": 3.0,
+              "velocidad": 171,
+              "municionActual": 6,
+              "municionMaxima": 30,
+              "perdigon": 8,
+              "dispersion": 4.5
+            }
+            """;
+
+    private static final String FLASH_JSON = """
+            {
+              "tipoArma": "FLASH",
+              "nombre": "Flashbang",
+              "precio": 200,
+              "durabilidad": 100,
+              "tipo": "cegadora",
+              "radio": 5.0,
+              "distancia": 20.0,
+              "duracion": 2.0,
+              "intensidad": 100,
+              "duracionCeguera": 4.5
+            }
+            """;
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -201,6 +248,86 @@ class ArmaCrudControllerTest {
         mockMvc.perform(get("/api/armas"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void postConDanoNegativoDeGranadaDevuelve400YNoPersiste() throws Exception {
+        String invalido = GRANADA_JSON.replace("\"dano\": 98", "\"dano\": -1");
+
+        mockMvc.perform(post("/api/armas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalido))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.tipo").value("DANO_INVALIDO"));
+
+        mockMvc.perform(get("/api/armas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void putConDanoNegativoDeGranadaDevuelve400YConservaElValorPersistido() throws Exception {
+        int id = crear(GRANADA_JSON);
+        String invalido = GRANADA_JSON.replace("\"dano\": 98", "\"dano\": -5");
+
+        mockMvc.perform(put("/api/armas/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalido))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.tipo").value("DANO_INVALIDO"));
+
+        mockMvc.perform(get("/api/armas/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dano").value(98));
+    }
+
+    @Test
+    void postConCantidadesNegativasDeClasesHijasDevuelve400() throws Exception {
+        mockMvc.perform(post("/api/armas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(ESCOPETA_JSON.replace("\"perdigon\": 8", "\"perdigon\": -1")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.tipo").value("ARMA_INVALIDA"));
+
+        mockMvc.perform(post("/api/armas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(FLASH_JSON.replace("\"intensidad\": 100", "\"intensidad\": -1")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.tipo").value("ARMA_INVALIDA"));
+
+        mockMvc.perform(get("/api/armas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void aplicarDanoNegativoDevuelve400YNoCambiaLaDurabilidad() throws Exception {
+        int id = crear(FUSIL_JSON);
+
+        mockMvc.perform(post("/api/armas/{id}/dano", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dano\": -5}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.tipo").value("DANO_INVALIDO"));
+
+        mockMvc.perform(get("/api/armas/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.durabilidad").value(100));
+    }
+
+    @Test
+    void cargarMunicionConCantidadNegativaDevuelve400YNoCambiaLaMunicion() throws Exception {
+        int id = crear(FUSIL_JSON);
+
+        mockMvc.perform(post("/api/armas/{id}/cargar-municion", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cantidad\": -5}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.tipo").value("CARGA_MUNICION_INVALIDA"));
+
+        mockMvc.perform(get("/api/armas/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.municionActual").value(30));
     }
 
     @Test

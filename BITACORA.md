@@ -36,3 +36,20 @@
   - **Pruebas:** `ArmaCrudControllerTest` (crear/listar/obtener/actualizar/borrar, validaciones, 404, simulación feliz y errores de daño/munición) y nuevas pruebas de dominio para `dispararA`, `recargar` y `recibirDano`; `./mvnw test` BUILD SUCCESS (34 tests).
   - **Documentación:** README actualizado (modelo persistido, tabla de endpoints, simulación, reglas, Mermaid, decisiones), nuevo `docs/especificaciones-poo08-cs2.md` y esta entrada de bitácora. Commit de código `2668068`.
   - **Exclusión:** la consigna 9 (colección Insomnia) no se implementó por pedido explícito.
+
+11. **"https://api.restful-aoi.dev/objects necesito que agregues un servicio que consulte esta apirest con el web client de springboot"**
+  - La URL indicada no resolvía (`curl: (6) Could not resolve host: api.restful-aoi.dev`); por elección del usuario se usó `https://api.restful-api.dev/objects`.
+  - `pom.xml`: `spring-boot-starter-webclient`; `application.properties`: `api.restful.base-url`.
+  - `ObjetoExternoService` (`WebClient.Builder`, `Flux`/`Mono`) y DTO `ObjetoExterno`; `ObjetoExternoController` con `GET /api/objetos` y `GET /api/objetos/{id}`.
+  - `ApiExceptionHandler`: 404 `OBJETO_EXTERNO_NO_ENCONTRADO`, 502 `SERVICIO_EXTERNO_NO_DISPONIBLE` y 400 para `IllegalArgumentException`.
+  - `ObjetoExternoServiceTest` (4 tests con `ExchangeFunction` simulado); `./mvnw test` BUILD SUCCESS (43 tests en ese momento).
+
+12. **"Agrega OpenAPI a todos los servicios REST y swaggerUI al proyecto"**
+  - Compatibilidad con Spring Boot 4.1 verificada: `springdoc-openapi-starter-webmvc-ui:3.2.0`; rutas `/v3/api-docs` y `/swagger-ui.html`.
+  - `OpenApiConfig` con `@Bean OpenAPI` (título `CS2 Armas API`); `@Tag`/`@Operation`/`@Parameter`/`@ApiResponse` en `IndexController`, `ArmaController`, `ArmaCrudController` y `ObjetoExternoController`; `@Schema` en los DTOs.
+  - `OpenApiDocumentationTest` (2 tests: documento OpenAPI y Swagger UI); `./mvnw test` BUILD SUCCESS (45 tests).
+
+13. **"puedes verificar que este todo lo que añadiste? tambien actualiza el readme y la bitacora"**
+  - Revisión de `git status --short` y `git diff --cached`: confirmados los cambios de WebClient/OpenAPI; los ajustes de validación en `ArmaService`, constructores `protected` y tests extra de `ArmaCrudControllerTest` eran preexistentes a estas solicitudes.
+  - `./mvnw clean test` BUILD SUCCESS (45 tests, 0 errores) y lectura completa de `README.md` y `BITACORA.md`.
+  - `README.md`: servicio WebClient, endpoints `/api/objetos`, OpenAPI/Swagger UI, handlers 404/502, estructura y total de tests; `BITACORA.md`: entradas 11-13.

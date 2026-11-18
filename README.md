@@ -1,6 +1,6 @@
 # cs2-armas-api
 
-Servicio HTTP construido con **Spring Boot** (Maven, Java 21, Spring Web + Spring Data JPA + H2) sobre el modelado de **Counter-Strike 2**: inventario de armas con herencia, sobreescritura/sobrecarga, ocultamiento, CRUD REST persistido, reglas de negocio de **daño** y **carga de munición**, una **simulación** que involucra tres clases y persiste el resultado, y una **colección Insomnia** exportable para probar todo el flujo.
+Servicio HTTP construido con **Spring Boot** (Maven, Java 21, Spring Web + Spring Data JPA + H2) sobre el modelado de **Counter-Strike 2**: inventario de armas con herencia, sobreescritura/sobrecarga, ocultamiento, CRUD REST persistido, reglas de negocio de **daño** y **carga de munición**, una **simulación** que involucra tres clases y persiste el resultado, consulta a una API externa con **WebClient**, documentación **OpenAPI** con **Swagger UI** y una **colección Insomnia** exportable para probar todo el flujo.
 
 Ejercicios: POO-06/07/08 del taller de Git y Lenguaje de Programación 3 (CYT646).  
 POO-08: <https://github.com/alefq/afq-taller-git-2024/blob/main/docs/ejercicio-poo-08-crud-h2-insomnia-2026-10-28.md>
@@ -11,7 +11,7 @@ POO-08: <https://github.com/alefq/afq-taller-git-2024/blob/main/docs/ejercicio-p
 ./mvnw spring-boot:run
 ```
 
-Servicio: `http://localhost:8080`. Pruebas (34 tests: dominio, CRUD/simulación y endpoints POO-06/07):
+Servicio: `http://localhost:8080`. Pruebas (45 tests: dominio, CRUD/simulación, endpoints POO-06/07, servicio WebClient y documentación OpenAPI):
 
 ```bash
 ./mvnw test
@@ -205,6 +205,32 @@ curl -X POST "http://localhost:8080/api/armas/3/cargar-municion" \
 - `dano` se aplica con `Arma.recibirDano(int)`: no puede ser negativo ni superar la durabilidad disponible.
 - `cargar-municion` solo está disponible para `ArmaDeFuego`: la cantidad debe ser mayor a 0 y no superar `municionMaxima`.
 
+## Consulta a API externa con WebClient
+
+`ObjetoExternoService` usa el `WebClient.Builder` autoconfigurado por Spring Boot para consultar `https://api.restful-api.dev/objects`. La URL base es configurable con `api.restful.base-url` en `application.properties`. El servicio devuelve tipos reactivos (`Flux`/`Mono`) y el DTO `ObjetoExterno` (`id`, `name`, `data`, `createdAt`).
+
+| Operación | HTTP | URL | Éxito |
+|---|---|---|---|
+| Listar objetos externos | `GET` | `/api/objetos` | 200 |
+| Obtener objeto externo por id | `GET` | `/api/objetos/{id}` | 200 / 404 |
+
+```bash
+curl "http://localhost:8080/api/objetos"
+curl "http://localhost:8080/api/objetos/1"
+```
+
+Un 404 de la API externa se traduce a `OBJETO_EXTERNO_NO_ENCONTRADO` (404); cualquier otro fallo de WebClient se traduce a `SERVICIO_EXTERNO_NO_DISPONIBLE` (502).
+
+## Documentación OpenAPI y Swagger UI
+
+El starter `springdoc-openapi-starter-webmvc-ui` genera el documento desde los controladores anotados (`@Tag`, `@Operation`, `@Parameter`, `@ApiResponse`) y los DTOs (`@Schema`). Los metadatos (`title`, descripción y `version`) viven en `OpenApiConfig`.
+
+- JSON: `http://localhost:8080/v3/api-docs` (YAML en `/v3/api-docs.yaml`).
+- Swagger UI: `http://localhost:8080/swagger-ui.html` (redirige a `/swagger-ui/index.html`).
+- Rutas configuradas con `springdoc.api-docs.path` y `springdoc.swagger-ui.path` en `application.properties`.
+
+Para desactivar la documentación en producción: `springdoc.api-docs.enabled=false` y `springdoc.swagger-ui.enabled=false`.
+
 ## Reglas de negocio y excepciones
 
 Las reglas viven en el **dominio** y el servicio las dispara; el controller no asigna estado inválido directamente.
@@ -232,7 +258,9 @@ Handlers HTTP (`ApiExceptionHandler`):
 | `DanoInvalidoException` | 400 | `DANO_INVALIDO` |
 | `CargaMunicionException` | 400 | `CARGA_MUNICION_INVALIDA` |
 | `ArmaDominioException` (resto) | 400 | `DOMINIO` |
-| Parámetro de URL inválido | 400 | `PARAMETRO_INVALIDO` |
+| `NotFound` (API externa) | 404 | `OBJETO_EXTERNO_NO_ENCONTRADO` |
+| `WebClientException` | 502 | `SERVICIO_EXTERNO_NO_DISPONIBLE` |
+| Parámetro de URL inválido / `IllegalArgumentException` | 400 | `PARAMETRO_INVALIDO` |
 
 ## Endpoints POO-06/07 (demostración de modelado)
 
@@ -346,8 +374,10 @@ src/main/java/py/edu/uc/lp3/domain/                     modelado CS2 + entidades
 src/main/java/py/edu/uc/lp3/exceptions/                 jerarquía de excepciones del dominio
 src/main/java/py/edu/uc/lp3/repository/ArmaRepository   Spring Data (interfaz)
 src/main/java/py/edu/uc/lp3/service/ArmaService.java    negocio/validación + reglas + simulación
+src/main/java/py/edu/uc/lp3/service/ObjetoExternoService.java  consulta WebClient a API externa
+src/main/java/py/edu/uc/lp3/rest/config/OpenApiConfig.java     metadatos del documento OpenAPI
 src/main/java/py/edu/uc/lp3/rest/controller/            REST + handlers
-src/main/java/py/edu/uc/lp3/rest/dto/                   request/response de simulación
+src/main/java/py/edu/uc/lp3/rest/dto/                   request/response de simulación y objeto externo
 src/test/java/py/edu/uc/lp3/                           pruebas dominio/HTTP
 docs/insomnia-poo08.json                               colección exportable (consigna 9)
 docs/insomnia-poo08.md                                 guía de uso de la colección

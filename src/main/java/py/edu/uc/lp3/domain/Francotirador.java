@@ -10,7 +10,7 @@ public class Francotirador extends Fusil {
     private double alcance;
     private int zoom;
 
-    public Francotirador() {
+    protected Francotirador() {
         super();
         setAlcance(80.0);
         setZoom(4);

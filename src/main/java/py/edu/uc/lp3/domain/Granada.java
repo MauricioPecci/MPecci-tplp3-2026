@@ -14,7 +14,7 @@ public class Granada extends Arrojadiza implements Equipable {
 
     private boolean aturdimiento;
 
-    public Granada() {
+    protected Granada() {
         super();
         setTipo("explosiva");
         setRadio(4.0);

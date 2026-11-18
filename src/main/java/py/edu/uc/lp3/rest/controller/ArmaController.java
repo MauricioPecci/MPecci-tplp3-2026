@@ -1,5 +1,7 @@
 package py.edu.uc.lp3.rest.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +20,12 @@ import py.edu.uc.lp3.domain.Humo;
 import py.edu.uc.lp3.domain.Pistola;
 import py.edu.uc.lp3.domain.UIcapable;
 
+@Tag(name = "Armas - Demostración POO", description = "Endpoints de demostración de herencia, interfaces y sobrecarga")
 @RestController
 @RequestMapping("/api/armas")
 public class ArmaController {
 
+    @Operation(summary = "Describir subclases de Arma", description = "Muestra la clase concreta y la descripción de un fusil y una granada de humo.")
     @GetMapping("/descripcion")
     public List<Map<String, Object>> descripcionDeLasClasesHijas() {
         List<Arma> armas = List.of(
@@ -39,6 +43,7 @@ public class ArmaController {
                 .toList();
     }
 
+    @Operation(summary = "Mensajes de equipamiento", description = "Muestra el mensaje de la interfaz Equipable para un fusil y una granada.")
     @GetMapping("/equipables")
     public List<Map<String, Object>> mensajeDeEquipadoATravesDeLaInterfaz() {
         List<Equipable> equipables = List.of(
@@ -57,6 +62,7 @@ public class ArmaController {
                 .toList();
     }
 
+    @Operation(summary = "Imagen y sonido de las armas", description = "Muestra imagen y sonido de todas las subclases concretas mediante UIcapable.")
     @GetMapping("/ui")
     public List<Map<String, Object>> imagenYSonidoDeTodasLasClases() {
         List<UIcapable> armas = List.of(
@@ -79,6 +85,7 @@ public class ArmaController {
                 .toList();
     }
 
+    @Operation(summary = "Construir un fusil", description = "Construye un Fusil con los parámetros enviados y calcula su daño; distancia y critico son opcionales.")
     @GetMapping("/fusil")
     public Map<String, Object> construirFusil(
             @RequestParam(defaultValue = "AK-47") String nombre,
@@ -120,6 +127,7 @@ public class ArmaController {
         return respuesta;
     }
 
+    @Operation(summary = "Construir una granada de humo", description = "Construye un Humo con los parámetros enviados y calcula su área de cobertura.")
     @GetMapping("/humo")
     public Map<String, Object> construirHumo(
             @RequestParam(defaultValue = "Humo de cortina") String nombre,

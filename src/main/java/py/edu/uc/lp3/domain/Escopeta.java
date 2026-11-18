@@ -10,7 +10,7 @@ public class Escopeta extends ArmaDeFuego {
     private int perdigon;
     private double dispersion;
 
-    public Escopeta() {
+    protected Escopeta() {
         super();
         setPerdigon(8);
         setDispersion(4.5);
