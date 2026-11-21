@@ -32,26 +32,18 @@ class ArmaTest {
     }
 
     @Test
-    void elDominioRechazaUnPrecioNegativo() {
-        assertThatThrownBy(() -> new Humo("Humo de cortina", 8, -1))
-                .isInstanceOf(ArmaInvalidaException.class)
-                .hasMessageContaining("precio");
-    }
-
-    @Test
-    void elDominioRechazaPrecisionFueraDeRango() {
-        assertThatThrownBy(() -> new Fusil("AK-47", 1, 2700, 36, 150, 2.4, 600, true))
-                .isInstanceOf(ArmaInvalidaException.class)
-                .hasMessageContaining("precisión");
-    }
-
-    @Test
-    void elSetterNoDejaElArmaEnEstadoIlegal() {
+    void elDominioMantieneEstadoEncapsuladoSinLanzarValidaciones() {
         Fusil fusil = new Fusil("AK-47", 1, 2700, 36, 71, 2.4, 600, true);
 
-        assertThatThrownBy(() -> fusil.setDano(-5))
-                .isInstanceOf(ArmaInvalidaException.class);
-        assertThat(fusil.getDano()).isEqualTo(36);
+        fusil.setNombre("AK-47 mod");
+        fusil.setPrecio(-1);
+        fusil.setDurabilidad(0);
+        fusil.setDano(-5);
+
+        assertThat(fusil.getNombre()).isEqualTo("AK-47 mod");
+        assertThat(fusil.getPrecio()).isEqualTo(-1);
+        assertThat(fusil.getDurabilidad()).isZero();
+        assertThat(fusil.getDano()).isEqualTo(-5);
     }
 
     @Test
@@ -149,26 +141,15 @@ class ArmaTest {
     }
 
     @Test
-    void dispararSinMunicionFallaSinCambiarElEstadoDelObjetivo() {
-        Fusil fusil = new Fusil("AK-47", 1, 2700, 36, 71, 2.4, 600, true);
-        Humo humo = new Humo("Humo de cortina", 8, 300);
-        fusil.setMunicionActual(0);
-
-        assertThatThrownBy(() -> fusil.dispararA(humo, 0, false))
-                .isInstanceOf(CargaMunicionException.class);
-        assertThat(humo.getDurabilidad()).isEqualTo(100);
-    }
-
-    @Test
-    void recargarRespetaElMaximoYNoDejaMunicionInvalida() {
+    void recargarLlenaAlMaximoAunqueLaCantidadExcedaElEspacio() {
         Pistola pistola = new Pistola("USP-S", 3, 200, 35, 70, 1.5, 352, false, true);
         pistola.setMunicionMaxima(20);
         pistola.setMunicionActual(12);
 
-        assertThat(pistola.recargar(5)).isEqualTo(17);
-        assertThatThrownBy(() -> pistola.recargar(10))
-                .isInstanceOf(CargaMunicionException.class);
-        assertThat(pistola.getMunicionActual()).isEqualTo(17);
+        assertThat(pistola.recargar(5)).isEqualTo(20);
+        assertThat(pistola.getMunicionActual()).isEqualTo(20);
+        assertThat(pistola.recargar(999)).isEqualTo(20);
+        assertThat(pistola.getMunicionActual()).isEqualTo(20);
     }
 
     @Test

@@ -18,6 +18,8 @@ import py.edu.uc.lp3.exceptions.CargaMunicionException;
 import py.edu.uc.lp3.exceptions.DanoInvalidoException;
 import py.edu.uc.lp3.repository.ArmaRepository;
 import py.edu.uc.lp3.rest.dto.DanoResponse;
+import py.edu.uc.lp3.rest.dto.DisparoRequest;
+import py.edu.uc.lp3.rest.dto.DisparoResponse;
 import py.edu.uc.lp3.rest.dto.SimulacionRequest;
 import py.edu.uc.lp3.rest.dto.SimulacionResponse;
 
@@ -100,8 +102,8 @@ public class ArmaService {
 
     @Transactional
     public Arma cargarMunicion(Integer id, int cantidad) {
-        if (cantidad < 0) {
-            throw new CargaMunicionException("La cantidad a recargar no puede ser negativa: " + cantidad);
+        if (cantidad <= 0) {
+            throw new CargaMunicionException("La cantidad a recargar debe ser mayor a 0: " + cantidad);
         }
         Arma arma = findById(id);
         if (!(arma instanceof ArmaDeFuego fuego)) {
@@ -112,13 +114,62 @@ public class ArmaService {
     }
 
     @Transactional
+    public DisparoResponse disparar(Integer atacanteId, DisparoRequest request) {
+        if (request == null) {
+            throw new ArmaInvalidaException("La solicitud de disparo no puede ser nula");
+        }
+        if (request.objetivoId() == null || request.objetivoId() <= 0) {
+            throw new ArmaInvalidaException("El id del objetivo debe ser mayor a 0");
+        }
+        if (request.distancia() < 0) {
+            throw new ArmaInvalidaException("La distancia no puede ser negativa: " + request.distancia());
+        }
+        if (atacanteId != null && atacanteId.equals(request.objetivoId())) {
+            throw new ArmaInvalidaException("El atacante y el objetivo deben ser armas distintas");
+        }
+
+        Arma atacante = findById(atacanteId);
+        Arma objetivo = findById(request.objetivoId());
+        if (!(atacante instanceof ArmaDeFuego fuegoAtacante)) {
+            throw new ArmaInvalidaException("Solo las armas de fuego pueden disparar");
+        }
+        if (fuegoAtacante.getMunicionActual() <= 0) {
+            throw new CargaMunicionException("No hay munición disponible para disparar");
+        }
+
+        int atacanteMunicionAntes = fuegoAtacante.getMunicionActual();
+        int objetivoDurabilidadAntes = objetivo.getDurabilidad();
+        int danoAplicado = fuegoAtacante.dispararA(objetivo, request.distancia(), request.critico());
+        boolean objetivoDestruido = objetivo.getDurabilidad() == 0;
+
+        armaRepository.save(atacante);
+        if (objetivoDestruido) {
+            armaRepository.delete(objetivo);
+        } else {
+            armaRepository.save(objetivo);
+        }
+
+        return new DisparoResponse(
+                atacante.getId(),
+                atacante.getNombre(),
+                atacanteMunicionAntes,
+                fuegoAtacante.getMunicionActual(),
+                objetivo.getId(),
+                objetivo.getNombre(),
+                objetivoDurabilidadAntes,
+                objetivo.getDurabilidad(),
+                danoAplicado,
+                objetivoDestruido);
+    }
+
+    @Transactional
     public SimulacionResponse simular(SimulacionRequest request) {
         if (request == null) {
             throw new ArmaInvalidaException("La simulación no puede ser nula");
         }
-        if (request.municion() < 0) {
+        if (request.municion() <= 0) {
             throw new CargaMunicionException(
-                    "La munición a recargar no puede ser negativa: " + request.municion());
+                    "La munición a recargar debe ser mayor a 0: " + request.municion());
         }
         if (request.distancia() < 0) {
             throw new ArmaInvalidaException("La distancia no puede ser negativa: " + request.distancia());
@@ -138,6 +189,9 @@ public class ArmaService {
         }
         if (!(recargador instanceof ArmaDeFuego fuegoRecargador)) {
             throw new ArmaInvalidaException("El recargador debe ser un arma de fuego");
+        }
+        if (fuegoAtacante.getMunicionActual() <= 0) {
+            throw new CargaMunicionException("No hay munición disponible para disparar");
         }
 
         int atacanteMunicionAntes = fuegoAtacante.getMunicionActual();
@@ -181,8 +235,8 @@ public class ArmaService {
         if (arma.getPrecio() < 0) {
             throw new ArmaInvalidaException("El precio no puede ser negativo: " + arma.getPrecio());
         }
-        if (arma.getDurabilidad() < 0) {
-            throw new ArmaInvalidaException("La durabilidad no puede ser negativa: " + arma.getDurabilidad());
+        if (arma.getDurabilidad() <= 0) {
+            throw new ArmaInvalidaException("La durabilidad debe ser mayor a 0: " + arma.getDurabilidad());
         }
         if (arma instanceof ArmaDeFuego fuego) {
             if (fuego.getDano() < 0) {
@@ -223,6 +277,9 @@ public class ArmaService {
             validarNoNegativo("El zoom", francotirador.getZoom());
         }
         if (arma instanceof Arrojadiza arrojadiza) {
+            if (arrojadiza.getTipo() == null || arrojadiza.getTipo().isBlank()) {
+                throw new ArmaInvalidaException("El tipo de arma arrojadiza no puede estar vacío");
+            }
             if (arrojadiza.getRadio() <= 0) {
                 throw new ArmaInvalidaException(
                         "El radio de cobertura debe ser mayor a 0: " + arrojadiza.getRadio());

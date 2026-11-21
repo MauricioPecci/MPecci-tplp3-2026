@@ -331,6 +331,103 @@ class ArmaCrudControllerTest {
     }
 
     @Test
+    void cargarMunicionConExcesoLlenaAlMaximo() throws Exception {
+        int id = crear(PISTOLA_JSON);
+
+        mockMvc.perform(post("/api/armas/{id}/cargar-municion", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cantidad\": 999}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.municionActual").value(20));
+
+        mockMvc.perform(get("/api/armas/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.municionActual").value(20));
+    }
+
+    @Test
+    void noPermiteCrearArmaConDurabilidadCero() throws Exception {
+        String invalido = FUSIL_JSON.replace("\"durabilidad\": 100,", "\"durabilidad\": 0,");
+
+        mockMvc.perform(post("/api/armas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalido))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.tipo").value("ARMA_INVALIDA"));
+
+        mockMvc.perform(get("/api/armas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void dispararAplicaDanoConsumeMunicionYPersiste() throws Exception {
+        int atacante = crear(FUSIL_JSON);
+        int objetivo = crear(HUMO_JSON);
+
+        mockMvc.perform(post("/api/armas/{id}/disparar", atacante)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"objetivoId\": %d, \"distancia\": 0, \"critico\": false}".formatted(objetivo)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.atacanteId").value(atacante))
+                .andExpect(jsonPath("$.atacanteMunicionAntes").value(30))
+                .andExpect(jsonPath("$.atacanteMunicionDespues").value(29))
+                .andExpect(jsonPath("$.objetivoId").value(objetivo))
+                .andExpect(jsonPath("$.objetivoDurabilidadAntes").value(100))
+                .andExpect(jsonPath("$.objetivoDurabilidadDespues").value(64))
+                .andExpect(jsonPath("$.danoAplicado").value(36))
+                .andExpect(jsonPath("$.objetivoDestruido").value(false));
+
+        mockMvc.perform(get("/api/armas/{id}", atacante))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.municionActual").value(29));
+        mockMvc.perform(get("/api/armas/{id}", objetivo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.durabilidad").value(64));
+    }
+
+    @Test
+    void dispararConOverkillDestruyeObjetivo() throws Exception {
+        int atacante = crear(FUSIL_JSON);
+        int objetivo = crear("""
+                {
+                  "tipoArma": "HUMO",
+                  "nombre": "Humo frágil",
+                  "precio": 300,
+                  "durabilidad": 10,
+                  "tipo": "humo",
+                  "radio": 6.0,
+                  "distancia": 25.0,
+                  "duracion": 18.0
+                }
+                """);
+
+        mockMvc.perform(post("/api/armas/{id}/disparar", atacante)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"objetivoId\": %d, \"distancia\": 0, \"critico\": false}".formatted(objetivo)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.danoAplicado").value(10))
+                .andExpect(jsonPath("$.objetivoDurabilidadDespues").value(0))
+                .andExpect(jsonPath("$.objetivoDestruido").value(true));
+
+        mockMvc.perform(get("/api/armas/{id}", objetivo))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.tipo").value("ARMA_NO_ENCONTRADA"));
+    }
+
+    @Test
+    void dispararConArmaNoDeFuegoDevuelve400() throws Exception {
+        int atacante = crear(HUMO_JSON);
+        int objetivo = crear(FUSIL_JSON);
+
+        mockMvc.perform(post("/api/armas/{id}/disparar", atacante)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"objetivoId\": %d, \"distancia\": 0, \"critico\": false}".formatted(objetivo)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.tipo").value("ARMA_INVALIDA"));
+    }
+
+    @Test
     void simulacionFelizCambiaElEstadoDeLasTresClasesYPersiste() throws Exception {
         int atacante = crear(FUSIL_JSON);
         int objetivo = crear(HUMO_JSON);
@@ -357,7 +454,7 @@ class ArmaCrudControllerTest {
                 .andExpect(jsonPath("$.danoAplicado").value(36))
                 .andExpect(jsonPath("$.atacanteMunicionDespues").value(29))
                 .andExpect(jsonPath("$.objetivoDurabilidadDespues").value(64))
-                .andExpect(jsonPath("$.recargadorMunicionDespues").value(17))
+                .andExpect(jsonPath("$.recargadorMunicionDespues").value(20))
                 .andExpect(jsonPath("$.objetivoDestruido").value(false));
 
         mockMvc.perform(get("/api/armas/{id}", atacante))
@@ -365,7 +462,7 @@ class ArmaCrudControllerTest {
         mockMvc.perform(get("/api/armas/{id}", objetivo))
                 .andExpect(jsonPath("$.durabilidad").value(64));
         mockMvc.perform(get("/api/armas/{id}", recargador))
-                .andExpect(jsonPath("$.municionActual").value(17));
+                .andExpect(jsonPath("$.municionActual").value(20));
     }
 
     @Test
@@ -405,7 +502,7 @@ class ArmaCrudControllerTest {
                 .andExpect(jsonPath("$.objetivoDurabilidadDespues").value(0))
                 .andExpect(jsonPath("$.objetivoDestruido").value(true))
                 .andExpect(jsonPath("$.atacanteMunicionDespues").value(29))
-                .andExpect(jsonPath("$.recargadorMunicionDespues").value(17));
+                .andExpect(jsonPath("$.recargadorMunicionDespues").value(20));
 
         mockMvc.perform(get("/api/armas/{id}", atacante))
                 .andExpect(status().isOk())
@@ -415,11 +512,11 @@ class ArmaCrudControllerTest {
                 .andExpect(jsonPath("$.tipo").value("ARMA_NO_ENCONTRADA"));
         mockMvc.perform(get("/api/armas/{id}", recargador))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.municionActual").value(17));
+                .andExpect(jsonPath("$.municionActual").value(20));
     }
 
     @Test
-    void simulacionConCargaExcesivaDevuelveHandlerDeMunicion() throws Exception {
+    void simulacionConCargaExcesivaLlenaAlMaximoYNoFalla() throws Exception {
         int atacante = crear(FUSIL_JSON);
         int objetivo = crear(HUMO_JSON);
         int recargador = crear(PISTOLA_JSON);
@@ -438,8 +535,14 @@ class ArmaCrudControllerTest {
         mockMvc.perform(post("/api/armas/simulacion")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(simulacion))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.tipo").value("CARGA_MUNICION_INVALIDA"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recargadorMunicionAntes").value(12))
+                .andExpect(jsonPath("$.recargadorMunicionDespues").value(20))
+                .andExpect(jsonPath("$.municionRecargada").value(50));
+
+        mockMvc.perform(get("/api/armas/{id}", recargador))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.municionActual").value(20));
     }
 
     @Test

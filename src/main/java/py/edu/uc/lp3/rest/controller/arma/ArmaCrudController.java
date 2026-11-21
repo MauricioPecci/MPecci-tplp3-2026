@@ -26,6 +26,8 @@ import py.edu.uc.lp3.domain.Granada;
 import py.edu.uc.lp3.domain.Humo;
 import py.edu.uc.lp3.domain.Pistola;
 import py.edu.uc.lp3.rest.dto.DanoResponse;
+import py.edu.uc.lp3.rest.dto.DisparoRequest;
+import py.edu.uc.lp3.rest.dto.DisparoResponse;
 import py.edu.uc.lp3.rest.dto.SimulacionRequest;
 import py.edu.uc.lp3.rest.dto.SimulacionResponse;
 import py.edu.uc.lp3.service.ArmaService;
@@ -161,11 +163,20 @@ public class ArmaCrudController {
         return ResponseEntity.ok(armaService.aplicarDano(id, dano));
     }
 
-    @Operation(summary = "Cargar munición", description = "Recarga un arma de fuego; el cuerpo espera la clave cantidad.")
+    @Operation(summary = "Cargar munición", description = "Recarga un arma de fuego hasta su munición máxima; el cuerpo espera la clave cantidad.")
     @ApiResponse(responseCode = "400", description = "La cantidad o el tipo de arma no son válidos")
     @PostMapping("/{id}/cargar-municion")
     public ResponseEntity<Arma> cargarMunicion(@PathVariable Integer id, @RequestBody Map<String, Integer> body) {
         int cantidad = body != null && body.get("cantidad") != null ? body.get("cantidad") : 0;
         return ResponseEntity.ok(armaService.cargarMunicion(id, cantidad));
+    }
+
+    @Operation(summary = "Disparar", description = "Un arma de fuego dispara a un objetivo, aplica daño, consume munición y puede destruir el objetivo.")
+    @ApiResponse(responseCode = "200", description = "Disparo ejecutado")
+    @ApiResponse(responseCode = "400", description = "La solicitud o el estado del arma no son válidos")
+    @ApiResponse(responseCode = "404", description = "No existe el atacante u objetivo")
+    @PostMapping("/{id}/disparar")
+    public ResponseEntity<DisparoResponse> disparar(@PathVariable Integer id, @RequestBody DisparoRequest request) {
+        return ResponseEntity.ok(armaService.disparar(id, request));
     }
 }

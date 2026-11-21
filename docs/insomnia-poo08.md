@@ -15,7 +15,7 @@ La colección usa el formato de exportación **Insomnia v4** y contiene **24 req
 | `03 - Simulación` | Ejecuta la simulación y verifica el estado persistido de las tres armas. |
 | `04 - Excepciones` | Un request por cada excepción hija del dominio. |
 
-> Nota (actualización): además de `POST /api/armas` (polimórfico con `tipoArma`), la API expone creación por subtipo en `POST /api/armas/{fusil,escopeta,pistola,francotirador,humo,granada,flash}`. `POST /api/armas/{id}/dano` devuelve `200` con `DanoResponse` (`id`, `nombre`, `durabilidad`, `danoAplicado`, `destruida`): el daño negativo sigue siendo inválido (400), pero el sobre-daño se clampa a la durabilidad restante y, si llega a 0, el arma se destruye (eliminada) con `destruida: true`. La simulación incluye `objetivoDestruido` y puede destruir/eliminar el objetivo si queda en 0. Cuerpos malformados o con propiedades desconocidas responden 400 `CUERPO_INVALIDO`.
+> Nota (actualización): además de `POST /api/armas` (polimórfico con `tipoArma`), la API expone creación por subtipo en `POST /api/armas/{fusil,escopeta,pistola,francotirador,humo,granada,flash}`. `POST /api/armas/{id}/dano` devuelve `200` con `DanoResponse`: el daño negativo es inválido (400), el sobre-daño se clampa y puede destruir el arma. `POST /api/armas/{id}/cargar-municion` llena la munición al máximo; cantidad `<= 0` es 400 `CARGA_MUNICION_INVALIDA`. `POST /api/armas/{id}/disparar` ejecuta un disparo individual. La simulación incluye `objetivoDestruido` y la recarga deja al recargador en munición máxima. No se permite crear/actualizar con `durabilidad: 0`.
 
 ## Requisitos
 
@@ -96,7 +96,8 @@ Ejecutar con el Fusil, el Humo y la Pistola recién creados.
 
 | Request | Método | Resultado esperado |
 |---|---|---|
-| `01 Ejecutar simulación` | `POST /api/armas/simulacion` | `200`; Fusil 30→29, Humo 100→64, Pistola 12→17, `objetivoDestruido = false`. |
+| `01 Ejecutar simulación` | `POST /api/armas/simulacion` | `200`; Fusil 30→29, Humo 100→64, Pistola 12→20, `objetivoDestruido = false`. |
+| `02 Disparar` | `POST /api/armas/{{ fusilId }}/disparar` | `200`; consume munición, aplica daño y devuelve `DisparoResponse`. |
 | `02 Verificar Fusil` | `GET /api/armas/{{ fusilId }}` | `200`; `municionActual = 29`. |
 | `03 Verificar Humo` | `GET /api/armas/{{ humoId }}` | `200`; `durabilidad = 64`. |
 | `04 Verificar Pistola` | `GET /api/armas/{{ pistolaId }}` | `200`; `municionActual = 17`. |
@@ -112,7 +113,7 @@ Estos requests están diseñados para fallar; el resultado esperado es un error 
 | `01 POST ilegal` | `POST /api/armas` con precio negativo | `400`; `tipo = ARMA_INVALIDA`. |
 | `02 ID inexistente` | `GET /api/armas/999999` | `404`; `tipo = ARMA_NO_ENCONTRADA`. |
 | `03 Daño inválido` | `POST /api/armas/{{ fusilId }}/dano` con `dano: -1` | `400`; `tipo = DANO_INVALIDO` (daño negativo). El sobre-daño ya no es error: se clampa y puede destruir el arma (200 con `DanoResponse`). |
-| `04 Recarga inválida` | `POST /api/armas/{{ pistolaId }}/cargar-municion` con `cantidad: 999` | `400`; `tipo = CARGA_MUNICION_INVALIDA`. |
+| `04 Recarga inválida - cantidad cero` | `POST /api/armas/{{ pistolaId }}/cargar-municion` con `cantidad: 0` | `400`; `tipo = CARGA_MUNICION_INVALIDA`. El exceso ya no es error: llena al máximo. |
 | `05 Recargar Humo` | `POST /api/armas/{{ humoId }}/cargar-municion` | `400`; `tipo = ARMA_INVALIDA` (el Humo no es arma de fuego). |
 | `06 Operación con id inexistente` | `POST /api/armas/999999/dano` | `404`; `tipo = ARMA_NO_ENCONTRADA`. |
 

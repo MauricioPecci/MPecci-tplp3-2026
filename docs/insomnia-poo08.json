@@ -587,7 +587,7 @@
       "created": 1762732800000,
       "url": "{{ baseUrl }}/api/armas/{{ fusilId }}/dano",
       "name": "03 Daño inválido - DanoInvalidoException",
-      "description": "",
+      "description": "Debe devolver 400 DANO_INVALIDO por daño negativo. El sobre-daño ya no es error: se clampa y puede destruir el arma.",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
@@ -617,12 +617,12 @@
       "modified": 1762732800000,
       "created": 1762732800000,
       "url": "{{ baseUrl }}/api/armas/{{ pistolaId }}/cargar-municion",
-      "name": "04 Recarga inválida - CargaMunicionException",
-      "description": "",
+      "name": "04 Recarga inválida - cantidad cero",
+      "description": "Debe devolver 400 CARGA_MUNICION_INVALIDA porque la cantidad a recargar debe ser mayor a 0. El exceso ya no es error: llena al máximo.",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"cantidad\": 999\n}"
+        "text": "{\n  \"cantidad\": 0\n}"
       },
       "parameters": [],
       "headers": [
@@ -745,6 +745,25 @@
       "description": "CRUD, interfaces, simulación y excepciones de la API de armas CS2 (actualizada: creación por subtipo, DanoResponse con destrucción por durabilidad 0/clamp, objetivoDestruido en simulación, 400 CUERPO_INVALIDO)",
       "scope": "collection",
       "_type": "workspace"
+    },
+    {
+      "_id": "req_disparar_01",
+      "_type": "request",
+      "parentId": "fld_simulacion",
+      "name": "02 Disparar",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/armas/{{ _.fusilId }}/disparar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"objetivoId\": {{ _.humoId }},\n  \"distancia\": 0,\n  \"critico\": false\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "description": "Dispara con el fusil al humo. Consume munición, aplica daño y puede destruir el objetivo."
     }
   ]
 }

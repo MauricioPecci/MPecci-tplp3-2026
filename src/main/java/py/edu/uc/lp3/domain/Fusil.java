@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
 
 @Entity
 @DiscriminatorValue("FUSIL")
@@ -60,22 +59,10 @@ public class Fusil extends ArmaDeFuego implements Equipable {
     public void setAutomatica(boolean automatica) { this.automatica = automatica; }
 
     public int getMira() { return mira; }
-
-    public void setMira(int mira) {
-        if (mira < 0) {
-            throw new ArmaInvalidaException("La mira no puede ser negativa: " + mira);
-        }
-        this.mira = mira;
-    }
+    public void setMira(int mira) { this.mira = mira; }
 
     public int getRetroceso() { return retroceso; }
-
-    public void setRetroceso(int retroceso) {
-        if (retroceso < 0) {
-            throw new ArmaInvalidaException("El retroceso no puede ser negativo: " + retroceso);
-        }
-        this.retroceso = retroceso;
-    }
+    public void setRetroceso(int retroceso) { this.retroceso = retroceso; }
 
     public boolean isSilenciador() { return silenciador; }
     public void setSilenciador(boolean silenciador) { this.silenciador = silenciador; }

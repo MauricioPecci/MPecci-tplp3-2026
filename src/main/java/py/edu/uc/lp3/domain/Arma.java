@@ -12,8 +12,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
-import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
-import py.edu.uc.lp3.exceptions.DanoInvalidoException;
 
 @Entity
 @Table(name = "armas")
@@ -52,45 +50,18 @@ public abstract class Arma implements UIcapable {
     }
 
     public String getNombre() { return nombre; }
-
-    public void setNombre(String nombre) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new ArmaInvalidaException("El nombre del arma no puede estar vacío");
-        }
-        this.nombre = nombre;
-    }
+    public void setNombre(String nombre) { this.nombre = nombre; }
 
     public int getId() { return id; }
-
-    public void setId(int id) {
-        if (id <= 0) {
-            throw new ArmaInvalidaException("El id debe ser mayor a 0: " + id);
-        }
-        this.id = id;
-    }
+    public void setId(int id) { this.id = id; }
 
     public double getPrecio() { return precio; }
-
-    public void setPrecio(double precio) {
-        if (precio < 0) {
-            throw new ArmaInvalidaException("El precio no puede ser negativo: " + precio);
-        }
-        this.precio = precio;
-    }
+    public void setPrecio(double precio) { this.precio = precio; }
 
     public int getDurabilidad() { return durabilidad; }
-
-    public void setDurabilidad(int durabilidad) {
-        if (durabilidad < 0) {
-            throw new ArmaInvalidaException("La durabilidad no puede ser negativa: " + durabilidad);
-        }
-        this.durabilidad = durabilidad;
-    }
+    public void setDurabilidad(int durabilidad) { this.durabilidad = durabilidad; }
 
     public int recibirDano(int dano) {
-        if (dano < 0) {
-            throw new DanoInvalidoException("El daño aplicado no puede ser negativo: " + dano);
-        }
         int danoAplicado = Math.min(dano, this.durabilidad);
         this.durabilidad -= danoAplicado;
         return danoAplicado;
