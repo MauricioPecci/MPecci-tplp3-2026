@@ -2,8 +2,11 @@ package py.edu.uc.lp3.rest.controller;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -18,6 +21,8 @@ import py.edu.uc.lp3.exceptions.DanoInvalidoException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    private static final Logger LOGGER = LogManager.getLogger(ApiExceptionHandler.class);
 
     @ExceptionHandler(ArmaNoEncontradaException.class)
     public ResponseEntity<Map<String, Object>> armaNoEncontrada(ArmaNoEncontradaException e) {
@@ -66,6 +71,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(NotFound.class)
     public ResponseEntity<Map<String, Object>> objetoExternoNoEncontrado(NotFound e) {
+        LOGGER.debug("La API externa respondió 404: {}", e.getMessage());
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("tipo", "OBJETO_EXTERNO_NO_ENCONTRADO");
         body.put("error", e.getMessage());
@@ -75,11 +81,40 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(WebClientException.class)
     public ResponseEntity<Map<String, Object>> servicioExternoNoDisponible(WebClientException e) {
+        LOGGER.debug("Falló la integración con la API externa: {}", e.toString());
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("tipo", "SERVICIO_EXTERNO_NO_DISPONIBLE");
         body.put("error", e.getMessage());
         body.put("rechazo", "la API externa no pudo completar la consulta");
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(body);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> cuerpoInvalido(HttpMessageNotReadableException e) {
+        Throwable causa = e.getCause();
+        while (causa != null) {
+            if (causa instanceof DanoInvalidoException danoInvalido) {
+                return danoInvalido(danoInvalido);
+            }
+            if (causa instanceof CargaMunicionException cargaInvalida) {
+                return cargaMunicionInvalida(cargaInvalida);
+            }
+            if (causa instanceof ArmaNoEncontradaException noEncontrada) {
+                return armaNoEncontrada(noEncontrada);
+            }
+            if (causa instanceof ArmaInvalidaException invalida) {
+                return armaInvalida(invalida);
+            }
+            if (causa instanceof ArmaDominioException dominio) {
+                return dominioGeneral(dominio);
+            }
+            causa = causa.getCause();
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tipo", "CUERPO_INVALIDO");
+        body.put("error", "Cuerpo de la petición inválido o no legible");
+        body.put("rechazo", "el cuerpo no cumple el contrato del servicio");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class,

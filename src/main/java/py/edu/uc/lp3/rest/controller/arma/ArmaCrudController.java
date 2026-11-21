@@ -18,6 +18,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import py.edu.uc.lp3.domain.Arma;
+import py.edu.uc.lp3.domain.Escopeta;
+import py.edu.uc.lp3.domain.Flash;
+import py.edu.uc.lp3.domain.Francotirador;
+import py.edu.uc.lp3.domain.Fusil;
+import py.edu.uc.lp3.domain.Granada;
+import py.edu.uc.lp3.domain.Humo;
+import py.edu.uc.lp3.domain.Pistola;
+import py.edu.uc.lp3.rest.dto.DanoResponse;
 import py.edu.uc.lp3.rest.dto.SimulacionRequest;
 import py.edu.uc.lp3.rest.dto.SimulacionResponse;
 import py.edu.uc.lp3.service.ArmaService;
@@ -48,12 +56,75 @@ public class ArmaCrudController {
         return ResponseEntity.ok(armaService.findById(id));
     }
 
-    @Operation(summary = "Crear arma", description = "Persiste un arma nueva; el id lo asigna la base de datos.")
+    @Operation(summary = "Crear arma", description = "Persiste un arma nueva de forma polimórfica usando tipoArma; el id lo asigna la base de datos.")
     @ApiResponse(responseCode = "201", description = "Arma creada")
     @ApiResponse(responseCode = "400", description = "Los datos del arma no son válidos")
     @PostMapping
     public ResponseEntity<Arma> create(@RequestBody Arma arma) {
         Arma creado = armaService.create(arma);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @Operation(summary = "Crear fusil", description = "Persiste un fusil nuevo; el id lo asigna la base de datos.")
+    @ApiResponse(responseCode = "201", description = "Fusil creado")
+    @ApiResponse(responseCode = "400", description = "Los datos del fusil no son válidos")
+    @PostMapping("/fusil")
+    public ResponseEntity<Fusil> createFusil(@RequestBody Fusil arma) {
+        Fusil creado = (Fusil) armaService.create(arma);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @Operation(summary = "Crear escopeta", description = "Persiste una escopeta nueva; el id lo asigna la base de datos.")
+    @ApiResponse(responseCode = "201", description = "Escopeta creada")
+    @ApiResponse(responseCode = "400", description = "Los datos de la escopeta no son válidos")
+    @PostMapping("/escopeta")
+    public ResponseEntity<Escopeta> createEscopeta(@RequestBody Escopeta arma) {
+        Escopeta creado = (Escopeta) armaService.create(arma);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @Operation(summary = "Crear pistola", description = "Persiste una pistola nueva; el id lo asigna la base de datos.")
+    @ApiResponse(responseCode = "201", description = "Pistola creada")
+    @ApiResponse(responseCode = "400", description = "Los datos de la pistola no son válidos")
+    @PostMapping("/pistola")
+    public ResponseEntity<Pistola> createPistola(@RequestBody Pistola arma) {
+        Pistola creado = (Pistola) armaService.create(arma);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @Operation(summary = "Crear francotirador", description = "Persiste un francotirador nuevo; el id lo asigna la base de datos.")
+    @ApiResponse(responseCode = "201", description = "Francotirador creado")
+    @ApiResponse(responseCode = "400", description = "Los datos del francotirador no son válidos")
+    @PostMapping("/francotirador")
+    public ResponseEntity<Francotirador> createFrancotirador(@RequestBody Francotirador arma) {
+        Francotirador creado = (Francotirador) armaService.create(arma);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @Operation(summary = "Crear humo", description = "Persiste una granada de humo nueva; el id lo asigna la base de datos.")
+    @ApiResponse(responseCode = "201", description = "Humo creado")
+    @ApiResponse(responseCode = "400", description = "Los datos del humo no son válidos")
+    @PostMapping("/humo")
+    public ResponseEntity<Humo> createHumo(@RequestBody Humo arma) {
+        Humo creado = (Humo) armaService.create(arma);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @Operation(summary = "Crear granada", description = "Persiste una granada nueva; el id lo asigna la base de datos.")
+    @ApiResponse(responseCode = "201", description = "Granada creada")
+    @ApiResponse(responseCode = "400", description = "Los datos de la granada no son válidos")
+    @PostMapping("/granada")
+    public ResponseEntity<Granada> createGranada(@RequestBody Granada arma) {
+        Granada creado = (Granada) armaService.create(arma);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @Operation(summary = "Crear flash", description = "Persiste una granada flash nueva; el id lo asigna la base de datos.")
+    @ApiResponse(responseCode = "201", description = "Flash creada")
+    @ApiResponse(responseCode = "400", description = "Los datos de la flash no son válidos")
+    @PostMapping("/flash")
+    public ResponseEntity<Flash> createFlash(@RequestBody Flash arma) {
+        Flash creado = (Flash) armaService.create(arma);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
@@ -81,10 +152,11 @@ public class ArmaCrudController {
         return ResponseEntity.ok(armaService.simular(request));
     }
 
-    @Operation(summary = "Aplicar daño", description = "Reduce la durabilidad del arma indicada; el cuerpo espera la clave dano.")
+    @Operation(summary = "Aplicar daño", description = "Reduce la durabilidad del arma indicada; si llega a 0 se destruye. El cuerpo espera la clave dano.")
+    @ApiResponse(responseCode = "200", description = "Daño aplicado; la respuesta indica si el arma fue destruida")
     @ApiResponse(responseCode = "400", description = "El daño no es válido")
     @PostMapping("/{id}/dano")
-    public ResponseEntity<Arma> aplicarDano(@PathVariable Integer id, @RequestBody Map<String, Integer> body) {
+    public ResponseEntity<DanoResponse> aplicarDano(@PathVariable Integer id, @RequestBody Map<String, Integer> body) {
         int dano = body != null && body.get("dano") != null ? body.get("dano") : 0;
         return ResponseEntity.ok(armaService.aplicarDano(id, dano));
     }

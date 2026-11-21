@@ -357,7 +357,8 @@ class ArmaCrudControllerTest {
                 .andExpect(jsonPath("$.danoAplicado").value(36))
                 .andExpect(jsonPath("$.atacanteMunicionDespues").value(29))
                 .andExpect(jsonPath("$.objetivoDurabilidadDespues").value(64))
-                .andExpect(jsonPath("$.recargadorMunicionDespues").value(17));
+                .andExpect(jsonPath("$.recargadorMunicionDespues").value(17))
+                .andExpect(jsonPath("$.objetivoDestruido").value(false));
 
         mockMvc.perform(get("/api/armas/{id}", atacante))
                 .andExpect(jsonPath("$.municionActual").value(29));
@@ -368,7 +369,7 @@ class ArmaCrudControllerTest {
     }
 
     @Test
-    void simulacionConDanoExcesivoDevuelveHandlerDeDano() throws Exception {
+    void simulacionConDanoExcesivoDestruyeObjetivoYClampaDurabilidad() throws Exception {
         int atacante = crear(FUSIL_JSON);
         int objetivo = crear("""
                 {
@@ -398,8 +399,23 @@ class ArmaCrudControllerTest {
         mockMvc.perform(post("/api/armas/simulacion")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(simulacion))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.tipo").value("DANO_INVALIDO"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.danoAplicado").value(10))
+                .andExpect(jsonPath("$.objetivoDurabilidadAntes").value(10))
+                .andExpect(jsonPath("$.objetivoDurabilidadDespues").value(0))
+                .andExpect(jsonPath("$.objetivoDestruido").value(true))
+                .andExpect(jsonPath("$.atacanteMunicionDespues").value(29))
+                .andExpect(jsonPath("$.recargadorMunicionDespues").value(17));
+
+        mockMvc.perform(get("/api/armas/{id}", atacante))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.municionActual").value(29));
+        mockMvc.perform(get("/api/armas/{id}", objetivo))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.tipo").value("ARMA_NO_ENCONTRADA"));
+        mockMvc.perform(get("/api/armas/{id}", recargador))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.municionActual").value(17));
     }
 
     @Test
@@ -431,6 +447,140 @@ class ArmaCrudControllerTest {
         mockMvc.perform(delete("/api/armas/{id}", 999999))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.tipo").value("ARMA_NO_ENCONTRADA"));
+    }
+
+    @Test
+    void aplicarDanoDestruyeArmaYDevuelveCuerpoConDestruccion() throws Exception {
+        int id = crear(HUMO_JSON);
+
+        mockMvc.perform(post("/api/armas/{id}/dano", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dano\": 100}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.nombre").value("Humo de cortina"))
+                .andExpect(jsonPath("$.durabilidad").value(0))
+                .andExpect(jsonPath("$.danoAplicado").value(100))
+                .andExpect(jsonPath("$.destruida").value(true));
+
+        mockMvc.perform(get("/api/armas/{id}", id))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.tipo").value("ARMA_NO_ENCONTRADA"));
+    }
+
+    @Test
+    void aplicarDanoExcesivoClampaADurabilidadYDestruyeArma() throws Exception {
+        int id = crear(HUMO_JSON);
+
+        mockMvc.perform(post("/api/armas/{id}/dano", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dano\": 150}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.durabilidad").value(0))
+                .andExpect(jsonPath("$.danoAplicado").value(100))
+                .andExpect(jsonPath("$.destruida").value(true));
+
+        mockMvc.perform(get("/api/armas/{id}", id))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.tipo").value("ARMA_NO_ENCONTRADA"));
+    }
+
+    @Test
+    void crearCadaSubtipoPorEndpointDevuelve201ConTipoCorrecto() throws Exception {
+        mockMvc.perform(post("/api/armas/fusil")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(FUSIL_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tipoArma").value("FUSIL"));
+
+        mockMvc.perform(post("/api/armas/escopeta")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(ESCOPETA_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tipoArma").value("ESCOPETA"));
+
+        mockMvc.perform(post("/api/armas/pistola")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(PISTOLA_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tipoArma").value("PISTOLA"));
+
+        String francotirador = """
+                {
+                  "tipoArma": "FRANCOTIRADOR",
+                  "nombre": "AWP",
+                  "precio": 4750,
+                  "durabilidad": 100,
+                  "dano": 115,
+                  "precision": 85,
+                  "recarga": 3.7,
+                  "velocidad": 340,
+                  "municionActual": 5,
+                  "municionMaxima": 30,
+                  "automatica": false,
+                  "mira": 8,
+                  "retroceso": 5,
+                  "silenciador": true,
+                  "alcance": 80.0,
+                  "zoom": 4
+                }
+                """;
+        mockMvc.perform(post("/api/armas/francotirador")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(francotirador))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tipoArma").value("FRANCOTIRADOR"));
+
+        mockMvc.perform(post("/api/armas/humo")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(HUMO_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tipoArma").value("HUMO"));
+
+        mockMvc.perform(post("/api/armas/granada")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(GRANADA_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tipoArma").value("GRANADA"));
+
+        mockMvc.perform(post("/api/armas/flash")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(FLASH_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tipoArma").value("FLASH"));
+
+        mockMvc.perform(get("/api/armas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(7)));
+    }
+
+    @Test
+    void postConCuerpoInconsistenteDevuelve400YNo500() throws Exception {
+        String invalido = """
+                {
+                  "tipoArma": "FUSIL",
+                  "nombre": "Fusilako",
+                  "precio": 0.1,
+                  "durabilidad": 10,
+                  "dano": 10,
+                  "precision": 20,
+                  "recarga": 0.1,
+                  "velocidad": 0.1,
+                  "municionActual": 1,
+                  "municionMaxima": 10,
+                  "perdigon": 1,
+                  "dispersion": 0.1
+                }
+                """;
+
+        mockMvc.perform(post("/api/armas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalido))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/armas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
     }
 
     private int crear(String json) throws Exception {

@@ -106,8 +106,8 @@ public abstract class ArmaDeFuego extends Arma {
         if (municionActual <= 0) {
             throw new CargaMunicionException("No hay munición disponible para disparar");
         }
-        int danoAplicado = calcularDano(distancia, disparoCritico);
-        objetivo.recibirDano(danoAplicado);
+        int danoCalculado = calcularDano(distancia, disparoCritico);
+        int danoAplicado = objetivo.recibirDano(danoCalculado);
         municionActual--;
         return danoAplicado;
     }

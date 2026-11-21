@@ -87,15 +87,13 @@ public abstract class Arma implements UIcapable {
         this.durabilidad = durabilidad;
     }
 
-    public void recibirDano(int dano) {
+    public int recibirDano(int dano) {
         if (dano < 0) {
             throw new DanoInvalidoException("El daño aplicado no puede ser negativo: " + dano);
         }
-        if (dano > durabilidad) {
-            throw new DanoInvalidoException(
-                    "El daño (" + dano + ") excede la durabilidad disponible (" + durabilidad + ")");
-        }
-        this.durabilidad -= dano;
+        int danoAplicado = Math.min(dano, this.durabilidad);
+        this.durabilidad -= danoAplicado;
+        return danoAplicado;
     }
 
     public abstract String describir();

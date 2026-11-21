@@ -25,11 +25,11 @@ Completar el servicio HTTP de CS2 con un **CRUD REST persistido en H2** para la 
 
 4. **Validaciones de negocio.** Se validan nombre no vacío, precio no negativo, durabilidad no negativa, precisión 0–100, daño no negativo, munición actual/máxima coherente y radio/distancia/duración positivos. Las invariantes viven en el dominio y el service valida el estado antes de persistir.
 
-5. **CRUD completo con códigos HTTP.** `POST /api/armas` → 201; `GET /api/armas` y `GET /api/armas/{id}` → 200; `PUT /api/armas/{id}` → 200; `DELETE /api/armas/{id}` → 204. Un id inexistente responde 404 con `tipo: ARMA_NO_ENCONTRADA`. El listado acepta filtros `nombre` y `precioMax`.
+5. **CRUD completo con códigos HTTP.** `POST /api/armas` (polimórfico, con `tipoArma`) → 201 y `POST /api/armas/{fusil,escopeta,pistola,francotirador,humo,granada,flash}` (por subtipo) → 201; `GET /api/armas` y `GET /api/armas/{id}` → 200; `PUT /api/armas/{id}` → 200; `DELETE /api/armas/{id}` → 204. Un id inexistente responde 404 con `tipo: ARMA_NO_ENCONTRADA`. El listado acepta filtros `nombre` y `precioMax`.
 
-6. **Reglas de daño y munición con excepciones y handlers.** El dominio implementa `Arma.recibirDano(int)`, `ArmaDeFuego.dispararA(Arma, int, boolean)` y `ArmaDeFuego.recargar(int)`. Las excepciones (`ArmaInvalidaException`, `DanoInvalidoException`, `CargaMunicionException`, `ArmaNoEncontradaException`) heredan de `ArmaDominioException` y `ApiExceptionHandler` responde 400/404 con un `tipo` distinto por caso.
+6. **Reglas de daño y munición con excepciones y handlers.** El dominio implementa `Arma.recibirDano(int)` (daño negativo → `DanoInvalidoException`; sobre-daño se clampa a la durabilidad disponible y, si llega a 0, el arma se destruye), `ArmaDeFuego.dispararA(Arma, int, boolean)` y `ArmaDeFuego.recargar(int)`. Las excepciones (`ArmaInvalidaException`, `DanoInvalidoException`, `CargaMunicionException`, `ArmaNoEncontradaException`) heredan de `ArmaDominioException` y `ApiExceptionHandler` responde 400/404 con un `tipo` distinto por caso; cuerpos malformados o con propiedades desconocidas responden 400 `CUERPO_INVALIDO` (`spring.jackson.deserialization.fail-on-unknown-properties=true`).
 
-7. **Simulación REST que involucra tres clases y persiste.** `POST /api/armas/simulacion` recibe `atacanteId`, `objetivoId`, `recargadorId`, `distancia`, `critico` y `municion`. Un **Fusil** dispara y daña a un **Humo**; una **Pistola** recarga munición. Los tres cambios se guardan con JPA y se verifican con `GET` posteriores. La operación es transaccional: si una regla falla, no queda estado parcial.
+7. **Simulación REST que involucra tres clases y persiste.** `POST /api/armas/simulacion` recibe `atacanteId`, `objetivoId`, `recargadorId`, `distancia`, `critico` y `municion`. Un **Fusil** dispara y daña a un **Humo**; una **Pistola** recarga munición. Los tres cambios se guardan con JPA y se verifican con `GET` posteriores. La operación es transaccional: si una regla falla, no queda estado parcial. Si el daño deja la durabilidad del objetivo en 0 (incluido overkill, clamped), el objetivo se destruye (se elimina) y la respuesta incluye `objetivoDestruido: true`.
 
 8. **Documentación y diagrama.** `README.md` describe el modelo persistido, los endpoints, las reglas, la simulación y las decisiones; responde las preguntas de «Qué hay que pensar» y incluye un diagrama Mermaid alineado con `src/`.
 
@@ -42,7 +42,7 @@ Requisitos: Java 21 y Maven (el wrapper `./mvnw` resuelve Maven).
 ```bash
 git clone git@github.com:MauricioPecci/MPecci-tplp3-2026.git
 cd MPecci-tplp3-2026
-./mvnw test          # 34 pruebas: dominio + CRUD/simulación + endpoints POO-06/07
+./mvnw test          # 50 pruebas: dominio, CRUD/simulación, endpoints POO-06/07, servicio WebClient y OpenAPI
 ./mvnw spring-boot:run
 ```
 
@@ -50,6 +50,7 @@ Verificar con curl (en otra terminal):
 
 ```bash
 # 1. Crear Fusil (id 1), Humo (id 2) y Pistola (id 3)
+# (también disponibles endpoints por subtipo: POST /api/armas/{fusil,escopeta,pistola,francotirador,humo,granada,flash})
 curl -X POST "http://localhost:8080/api/armas" -H "Content-Type: application/json" \
   -d '{"tipoArma":"FUSIL","nombre":"AK-47","precio":2700,"durabilidad":100,"dano":36,"precision":71,"recarga":2.4,"velocidad":600,"municionActual":30,"municionMaxima":30,"automatica":true,"mira":2,"retroceso":3,"silenciador":false}'
 
@@ -75,6 +76,7 @@ curl "http://localhost:8080/api/armas/3"   # municionActual = 17
 
 # 5. Operaciones individuales y errores
 curl -X POST "http://localhost:8080/api/armas/1/dano" -H "Content-Type: application/json" -d '{"dano":40}'
+# -> 200 DanoResponse {id,nombre,durabilidad,danoAplicado,destruida}; si llega a 0 se clampa y se destruye (destruida=true)
 curl -X POST "http://localhost:8080/api/armas/3/cargar-municion" -H "Content-Type: application/json" -d '{"cantidad":5}'
 curl -w "%{http_code}\n" "http://localhost:8080/api/armas/999999"   # 404 ARMA_NO_ENCONTRADA
 ```
@@ -93,7 +95,8 @@ Respuesta esperada de la simulación (extracto):
   "recargadorMunicionAntes": 12,
   "recargadorMunicionDespues": 17,
   "danoAplicado": 36,
-  "municionRecargada": 5
+  "municionRecargada": 5,
+  "objetivoDestruido": false
 }
 ```
 
@@ -112,4 +115,4 @@ La colección Insomnia y su guía están en `docs/insomnia-poo08.json` y `docs/i
 3. Ver `Arma` como `@Entity` raíz, `ArmaDeFuego`/`Arrojadiza` como `@MappedSuperclass` y las concretas con `@DiscriminatorValue`; confirmar que no queda `ArmaEntity`.
 4. Arrancar `./mvnw spring-boot:run` y correr la secuencia curl: crear las tres armas, ejecutar la simulación y verificar con `GET` que la munición del Fusil, la durabilidad del Humo y la munición de la Pistola cambiaron y persistieron.
 5. Importar `docs/insomnia-poo08.json` en Insomnia, activar el environment `Local` y ejecutar las carpetas en orden; `docs/insomnia-poo08.md` detalla los resultados esperados.
-6. Pregunta de anclaje: el controller solo traduce HTTP; el service valida y orquesta; el dominio aplica las reglas y lanza excepciones; el repositorio persiste. Un `POST /api/armas/{id}/dano` con daño mayor a la durabilidad o una recarga que supera el máximo responde 400 y no deja estado parcial.
+6. Pregunta de anclaje: el controller solo traduce HTTP; el service valida y orquesta; el dominio aplica las reglas y lanza excepciones; el repositorio persiste. Un `POST /api/armas/{id}/dano` con daño mayor a la durabilidad responde 200, clampa el daño a la durabilidad restante, destruye el arma si llega a 0 y devuelve `DanoResponse` indicando `destruida`; una recarga que supera el máximo responde 400 `CARGA_MUNICION_INVALIDA` y no deja estado parcial. Un cuerpo malformado o con propiedades desconocidas responde 400 `CUERPO_INVALIDO`.

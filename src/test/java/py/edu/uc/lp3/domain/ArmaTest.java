@@ -136,6 +136,19 @@ class ArmaTest {
     }
 
     @Test
+    void dispararConDanoExcesivoClampaADurabilidadYDestruyeElObjetivo() {
+        Fusil fusil = new Fusil("AK-47", 1, 2700, 36, 71, 2.4, 600, true);
+        Humo humo = new Humo("Humo frágil", 8, 300);
+        humo.setDurabilidad(10);
+
+        int dano = fusil.dispararA(humo, 0, false);
+
+        assertThat(dano).isEqualTo(10);
+        assertThat(fusil.getMunicionActual()).isEqualTo(29);
+        assertThat(humo.getDurabilidad()).isZero();
+    }
+
+    @Test
     void dispararSinMunicionFallaSinCambiarElEstadoDelObjetivo() {
         Fusil fusil = new Fusil("AK-47", 1, 2700, 36, 71, 2.4, 600, true);
         Humo humo = new Humo("Humo de cortina", 8, 300);
@@ -159,13 +172,18 @@ class ArmaTest {
     }
 
     @Test
-    void recibirDanoNoDejaDurabilidadNegativa() {
+    void recibirDanoClampaADurabilidadYDevuelveDanoAplicado() {
         Humo humo = new Humo("Humo de cortina", 8, 300);
 
-        humo.recibirDano(40);
+        int aplicado = humo.recibirDano(40);
+        assertThat(aplicado).isEqualTo(40);
         assertThat(humo.getDurabilidad()).isEqualTo(60);
-        assertThatThrownBy(() -> humo.recibirDano(61))
-                .isInstanceOf(DanoInvalidoException.class);
-        assertThat(humo.getDurabilidad()).isEqualTo(60);
+
+        int exceso = humo.recibirDano(61);
+        assertThat(exceso).isEqualTo(60);
+        assertThat(humo.getDurabilidad()).isZero();
+
+        assertThat(humo.recibirDano(10)).isZero();
+        assertThat(humo.getDurabilidad()).isZero();
     }
 }

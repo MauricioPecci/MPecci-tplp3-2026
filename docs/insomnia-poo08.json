@@ -742,7 +742,7 @@
       "modified": 1762732800000,
       "created": 1762732800000,
       "name": "POO-08 CS2",
-      "description": "CRUD, interfaces, simulación y excepciones de la API de armas CS2",
+      "description": "CRUD, interfaces, simulación y excepciones de la API de armas CS2 (actualizada: creación por subtipo, DanoResponse con destrucción por durabilidad 0/clamp, objetivoDestruido en simulación, 400 CUERPO_INVALIDO)",
       "scope": "collection",
       "_type": "workspace"
     }

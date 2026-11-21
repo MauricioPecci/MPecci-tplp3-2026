@@ -11,7 +11,7 @@ POO-08: <https://github.com/alefq/afq-taller-git-2024/blob/main/docs/ejercicio-p
 ./mvnw spring-boot:run
 ```
 
-Servicio: `http://localhost:8080`. Pruebas (45 tests: dominio, CRUD/simulación, endpoints POO-06/07, servicio WebClient y documentación OpenAPI):
+Servicio: `http://localhost:8080`. Pruebas (50 tests: dominio, CRUD/simulación, endpoints POO-06/07, servicio WebClient y documentación OpenAPI):
 
 ```bash
 ./mvnw test
@@ -45,7 +45,8 @@ Recurso: `/api/armas`. El verbo HTTP indica la operación. El controller solo tr
 
 | Operación | HTTP | URL | Éxito |
 |---|---|---|---|
-| Crear | `POST` | `/api/armas` | 201 |
+| Crear (polimórfico) | `POST` | `/api/armas` | 201 |
+| Crear por subtipo | `POST` | `/api/armas/{fusil,escopeta,pistola,francotirador,humo,granada,flash}` | 201 |
 | Listar / filtrar | `GET` | `/api/armas?nombre=...&precioMax=...` | 200 |
 | Obtener por id | `GET` | `/api/armas/{id}` | 200 / 404 |
 | Actualizar | `PUT` | `/api/armas/{id}` | 200 |
@@ -78,7 +79,22 @@ curl -X POST "http://localhost:8080/api/armas" -H "Content-Type: application/jso
   }'
 ```
 
-### Crear un Humo
+También se puede crear cada subtipo por su endpoint dedicado (sin `tipoArma` en el cuerpo), por ejemplo:
+
+```bash
+curl -X POST "http://localhost:8080/api/armas/humo" -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Bomba de humo",
+    "precio": 300,
+    "durabilidad": 100,
+    "tipo": "humo",
+    "radio": 6.0,
+    "distancia": 25.0,
+    "duracion": 18.0
+  }'
+```
+
+### Crear un Humo (polimórfico)
 
 ```bash
 curl -X POST "http://localhost:8080/api/armas" -H "Content-Type: application/json" \
@@ -178,9 +194,12 @@ Con el Fusil AK-47 (36 de daño), el Humo (100 de durabilidad) y la Pistola USP-
   "recargadorMunicionAntes": 12,
   "recargadorMunicionDespues": 17,
   "danoAplicado": 36,
-  "municionRecargada": 5
+  "municionRecargada": 5,
+  "objetivoDestruido": false
 }
 ```
+
+Si el daño aplicado deja la durabilidad del objetivo en 0 (incluido overkill), el objetivo se destruye, se elimina y la respuesta incluye `objetivoDestruido: true`.
 
 Verificación del estado persistido:
 
@@ -202,7 +221,7 @@ curl -X POST "http://localhost:8080/api/armas/3/cargar-municion" \
   -H "Content-Type: application/json" -d '{"cantidad":5}'
 ```
 
-- `dano` se aplica con `Arma.recibirDano(int)`: no puede ser negativo ni superar la durabilidad disponible.
+- `POST /api/armas/{id}/dano` devuelve `200` con un `DanoResponse` (`id`, `nombre`, `durabilidad`, `danoAplicado`, `destruida`). El daño no puede ser negativo; si iguala o supera la durabilidad disponible se clampa al valor restante, la durabilidad queda en 0 y el arma se destruye (se elimina). En caso de destrucción la respuesta indica `destruida: true`.
 - `cargar-municion` solo está disponible para `ArmaDeFuego`: la cantidad debe ser mayor a 0 y no superar `municionMaxima`.
 
 ## Consulta a API externa con WebClient
@@ -221,6 +240,10 @@ curl "http://localhost:8080/api/objetos/1"
 
 Un 404 de la API externa se traduce a `OBJETO_EXTERNO_NO_ENCONTRADO` (404); cualquier otro fallo de WebClient se traduce a `SERVICIO_EXTERNO_NO_DISPONIBLE` (502).
 
+### Trazas DEBUG de la integración
+
+El proyecto usa **Log4j2** (`spring-boot-starter-log4j2`, sin Logback) con configuración en `src/main/resources/log4j2.xml`. El root queda en `info` y las clases de la integración en `debug`: inicio de consulta, solicitud HTTP preparada, respuesta/status, deserialización, finalización, errores y traducción de errores a 404/502 se registran con `LOGGER.debug(...)`.
+
 ## Documentación OpenAPI y Swagger UI
 
 El starter `springdoc-openapi-starter-webmvc-ui` genera el documento desde los controladores anotados (`@Tag`, `@Operation`, `@Parameter`, `@ApiResponse`) y los DTOs (`@Schema`). Los metadatos (`title`, descripción y `version`) viven en `OpenApiConfig`.
@@ -235,7 +258,7 @@ Para desactivar la documentación en producción: `springdoc.api-docs.enabled=fa
 
 Las reglas viven en el **dominio** y el servicio las dispara; el controller no asigna estado inválido directamente.
 
-- `Arma.recibirDano(int)`: valida daño no negativo y no mayor a la durabilidad; resta durabilidad.
+- `Arma.recibirDano(int)`: valida daño no negativo; si supera la durabilidad disponible se clampa (overkill), resta hasta 0 y retorna el daño efectivamente aplicado. Si la durabilidad llega a 0, el service elimina el arma.
 - `ArmaDeFuego.dispararA(Arma, int, boolean)`: exige munición disponible, calcula el daño con las sobrecargas de `calcularDano`, aplica `recibirDano` y descuenta una bala.
 - `ArmaDeFuego.recargar(int)`: valida cantidad positiva y que `municionActual + cantidad <= municionMaxima`.
 - `ArmaDeFuego.calcularDano()` / `calcularDano(int)` / `calcularDano(int, boolean)`: daño base, ajuste por distancia (`max(1, dano - distancia / 10)`) y crítico (x2).
@@ -251,7 +274,7 @@ Jerarquía de excepciones (no comprobadas, `RuntimeException` vía `ArmaDominioE
 
 Handlers HTTP (`ApiExceptionHandler`):
 
-| Excepción | HTTP | `tipo` en JSON |
+| Excepción / caso | HTTP | `tipo` en JSON |
 |---|---|---|
 | `ArmaNoEncontradaException` | 404 | `ARMA_NO_ENCONTRADA` |
 | `ArmaInvalidaException` | 400 | `ARMA_INVALIDA` |
@@ -260,7 +283,10 @@ Handlers HTTP (`ApiExceptionHandler`):
 | `ArmaDominioException` (resto) | 400 | `DOMINIO` |
 | `NotFound` (API externa) | 404 | `OBJETO_EXTERNO_NO_ENCONTRADO` |
 | `WebClientException` | 502 | `SERVICIO_EXTERNO_NO_DISPONIBLE` |
+| Cuerpo JSON inválido / no legible / propiedades desconocidas | 400 | `CUERPO_INVALIDO` |
 | Parámetro de URL inválido / `IllegalArgumentException` | 400 | `PARAMETRO_INVALIDO` |
+
+Si durante la deserialización del cuerpo la causa es una excepción de dominio, se delega al handler correspondiente para preservar el `tipo` específico. La configuración `spring.jackson.deserialization.fail-on-unknown-properties=true` rechaza propiedades no esperadas.
 
 ## Endpoints POO-06/07 (demostración de modelado)
 
@@ -356,7 +382,7 @@ Estas respuestas describen la implementación actual; si el código cambia, debe
 
 5. **Protocolo del dominio.** `Equipable` declara `ranura()` y un `mensajeDeEquipado()` por defecto. Lo implementan `Fusil` (familia `ArmaDeFuego`) y `Granada` (familia `Arrojadiza`), así que `GET /api/armas/equipables` trabaja con `List<Equipable>` y habla con instancias de familias distintas. También existe `UIcapable` (`imagen()`, `sonido()`), implementada en la raíz `Arma`, y la usa `GET /api/armas/ui`.
 
-6. **Ocultamiento.** Las reglas numéricas las sostienen los setters del dominio (`setNombre`, `setPrecio`, `setDurabilidad`, `setDano`, `setPrecision`, `setMunicionActual`, `setMunicionMaxima`, etc.) y los métodos de juego (`recibirDano`, `dispararA`, `recargar`); `ArmaService.validar` vuelve a validar antes de `save`. JPA accede por campo (el `@Id` está en el campo), así que al hidratar no llama a los setters; la barrera efectiva es que los objetos se validan al entrar por JSON/service y el repositorio solo recibe objetos ya validados en esta aplicación. El request `01 POST ilegal - ArmaInvalidaException` de `04 - Excepciones` envía `precio: -1`; el setter lo rechaza durante la deserialización, el handler responde 400 `ARMA_INVALIDA` y un `GET /api/armas` posterior muestra la misma cantidad de armas que antes.
+6. **Ocultamiento.** Las reglas numéricas las sostienen los setters del dominio (`setNombre`, `setPrecio`, `setDurabilidad`, `setDano`, `setPrecision`, `setMunicionActual`, `setMunicionMaxima`, etc.) y los métodos de juego (`recibirDano`, `dispararA`, `recargar`); `ArmaService.validar` vuelve a validar antes de `save`. JPA accede por campo (el `@Id` está en el campo), así que al hidratar no llama a los setters; la barrera efectiva es que los objetos se validan al entrar por JSON/service y el repositorio solo recibe objetos ya validados en esta aplicación. El request `01 POST ilegal - ArmaInvalidaException` de `04 - Excepciones` envía `precio: -1`; el setter lo rechaza durante la deserialización, el handler responde 400 `ARMA_INVALIDA` y un `GET /api/armas` posterior muestra la misma cantidad de armas que antes. Los cuerpos con propiedades desconocidas o malformados se rechazan con 400 `CUERPO_INVALIDO`.
 
 7. **PUT y PATCH.** Solo está implementado `PUT /api/armas/{id}`; no hay `PATCH`. El `PUT` reemplaza el estado editable del recurso: conserva el `id`, no permite cambiar el subtipo y copia todas las propiedades del cuerpo sobre el existente. Un campo omitido no se conserva: Jackson lo deja en el valor por defecto de Java (`null`, `0`, `false`) y `BeanUtils.copyProperties` lo sobrescribe; si ese valor rompe una invariante (por ejemplo, `nombre` ausente), la respuesta es 400. Por eso el cliente debe enviar la representación completa.
 
@@ -364,7 +390,7 @@ Estas respuestas describen la implementación actual; si el código cambia, debe
 
 9. **Dos reglas.** (1) `Fusil.dispararA(...)` consume una bala del Fusil, calcula el daño con `calcularDano` y se lo aplica al Humo, que baja su durabilidad. (2) `Pistola.recargar(...)` aumenta la munición de la Pistola sin superar su máximo. Participan las tres clases: Fusil, Humo y Pistola. El recurso es `POST /api/armas/simulacion`; la operación es transaccional y los `GET` posteriores muestran el estado persistido (Fusil 29, Humo 64, Pistola 17 en la corrida base).
 
-10. **Excepciones.** La base es `ArmaDominioException extends RuntimeException` (no comprobada: las reglas del dominio no obligan a `try/catch` en cada llamada y el handler las traduce a HTTP). Las hijas son `ArmaInvalidaException` (estado/construcción inválida), `DanoInvalidoException` (daño negativo o mayor a la durabilidad), `CargaMunicionException` (recarga o munición fuera de rango) y `ArmaNoEncontradaException` (recurso inexistente). `ApiExceptionHandler` es un `@RestControllerAdvice` con un método `@ExceptionHandler` por tipo: 404 para `ARMA_NO_ENCONTRADA` y 400 para `ARMA_INVALIDA`, `DANO_INVALIDO` y `CARGA_MUNICION_INVALIDA`; además hay un handler general para `ArmaDominioException` (`DOMINIO`) por si aparece otra hija. El JSON de error lleva `tipo`, `error` y `rechazo`. Un id inexistente y una regla de juego incumplida son tipos distintos, y la colección Insomnia tiene un request por cada hija.
+10. **Excepciones.** La base es `ArmaDominioException extends RuntimeException` (no comprobada: las reglas del dominio no obligan a `try/catch` en cada llamada y el handler las traduce a HTTP). Las hijas son `ArmaInvalidaException` (estado/construcción inválida), `DanoInvalidoException` (daño negativo), `CargaMunicionException` (recarga o munición fuera de rango) y `ArmaNoEncontradaException` (recurso inexistente). El sobre-daño no es error: se clampa a la durabilidad disponible y, si llega a 0, el arma se destruye. `ApiExceptionHandler` es un `@RestControllerAdvice` con un método `@ExceptionHandler` por tipo: 404 para `ARMA_NO_ENCONTRADA` y 400 para `ARMA_INVALIDA`, `DANO_INVALIDO`, `CARGA_MUNICION_INVALIDA` y `CUERPO_INVALIDO` (cuerpos malformados o con propiedades desconocidas, delegando a la excepción de dominio cuando es la causa); además hay un handler general para `ArmaDominioException` (`DOMINIO`) por si aparece otra hija. El JSON de error lleva `tipo`, `error` y `rechazo`. Un id inexistente y una regla de juego incumplida son tipos distintos.
 
 ## Estructura
 

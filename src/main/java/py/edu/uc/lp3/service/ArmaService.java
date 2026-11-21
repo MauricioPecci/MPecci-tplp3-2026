@@ -17,6 +17,7 @@ import py.edu.uc.lp3.exceptions.ArmaNoEncontradaException;
 import py.edu.uc.lp3.exceptions.CargaMunicionException;
 import py.edu.uc.lp3.exceptions.DanoInvalidoException;
 import py.edu.uc.lp3.repository.ArmaRepository;
+import py.edu.uc.lp3.rest.dto.DanoResponse;
 import py.edu.uc.lp3.rest.dto.SimulacionRequest;
 import py.edu.uc.lp3.rest.dto.SimulacionResponse;
 
@@ -82,13 +83,19 @@ public class ArmaService {
     }
 
     @Transactional
-    public Arma aplicarDano(Integer id, int dano) {
+    public DanoResponse aplicarDano(Integer id, int dano) {
         if (dano < 0) {
             throw new DanoInvalidoException("El daño aplicado no puede ser negativo: " + dano);
         }
         Arma arma = findById(id);
-        arma.recibirDano(dano);
-        return armaRepository.save(arma);
+        int danoAplicado = arma.recibirDano(dano);
+        boolean destruida = arma.getDurabilidad() == 0;
+        if (destruida) {
+            armaRepository.delete(arma);
+        } else {
+            armaRepository.save(arma);
+        }
+        return new DanoResponse(arma.getId(), arma.getNombre(), arma.getDurabilidad(), danoAplicado, destruida);
     }
 
     @Transactional
@@ -139,9 +146,14 @@ public class ArmaService {
 
         int danoAplicado = fuegoAtacante.dispararA(objetivo, request.distancia(), request.critico());
         int recargadorMunicionDespues = fuegoRecargador.recargar(request.municion());
+        boolean objetivoDestruido = objetivo.getDurabilidad() == 0;
 
         armaRepository.save(atacante);
-        armaRepository.save(objetivo);
+        if (objetivoDestruido) {
+            armaRepository.delete(objetivo);
+        } else {
+            armaRepository.save(objetivo);
+        }
         armaRepository.save(recargador);
 
         return new SimulacionResponse(
@@ -155,7 +167,8 @@ public class ArmaService {
                 recargadorMunicionAntes,
                 recargadorMunicionDespues,
                 danoAplicado,
-                request.municion());
+                request.municion(),
+                objetivoDestruido);
     }
 
     private void validar(Arma arma) {

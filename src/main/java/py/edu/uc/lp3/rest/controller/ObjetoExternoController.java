@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +20,8 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/objetos")
 public class ObjetoExternoController {
 
+    private static final Logger LOGGER = LogManager.getLogger(ObjetoExternoController.class);
+
     private final ObjetoExternoService objetoExternoService;
 
     public ObjetoExternoController(ObjetoExternoService objetoExternoService) {
@@ -28,7 +32,10 @@ public class ObjetoExternoController {
     @ApiResponse(responseCode = "502", description = "La API externa no pudo completar la consulta")
     @GetMapping
     public Mono<List<ObjetoExterno>> findAll() {
-        return objetoExternoService.findAll().collectList();
+        LOGGER.debug("Solicitud recibida: GET /api/objetos");
+        return objetoExternoService.findAll()
+                .collectList()
+                .doOnNext(objetos -> LOGGER.debug("Respuesta a enviar con {} objetos externos", objetos.size()));
     }
 
     @Operation(summary = "Obtener objeto externo por id", description = "Obtiene un objeto de GET /objects/{id} de la API externa.")
@@ -36,6 +43,8 @@ public class ObjetoExternoController {
     @ApiResponse(responseCode = "502", description = "La API externa no pudo completar la consulta")
     @GetMapping("/{id}")
     public Mono<ObjetoExterno> findById(@Parameter(description = "Identificador del objeto externo") @PathVariable String id) {
-        return objetoExternoService.findById(id);
+        LOGGER.debug("Solicitud recibida: GET /api/objetos/{}", id);
+        return objetoExternoService.findById(id)
+                .doOnNext(objeto -> LOGGER.debug("Respuesta a enviar con el objeto externo id={}", objeto.id()));
     }
 }

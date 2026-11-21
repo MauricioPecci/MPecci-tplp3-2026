@@ -53,3 +53,15 @@
   - Revisión de `git status --short` y `git diff --cached`: confirmados los cambios de WebClient/OpenAPI; los ajustes de validación en `ArmaService`, constructores `protected` y tests extra de `ArmaCrudControllerTest` eran preexistentes a estas solicitudes.
   - `./mvnw clean test` BUILD SUCCESS (45 tests, 0 errores) y lectura completa de `README.md` y `BITACORA.md`.
   - `README.md`: servicio WebClient, endpoints `/api/objetos`, OpenAPI/Swagger UI, handlers 404/502, estructura y total de tests; `BITACORA.md`: entradas 11-13.
+
+14. **"quiero agregar log4j en nivel debug para todos los pasos de la integración con otros servicios"**
+  - `pom.xml`: `spring-boot-starter-log4j2` y exclusión de `spring-boot-starter-logging` en `spring-boot-starter-data-jpa` (árbol de dependencias sin Logback).
+  - `src/main/resources/log4j2.xml`: appender de consola, root `info` y nivel `debug` para `ObjetoExternoService`, `ObjetoExternoController` y `ApiExceptionHandler`.
+  - Trazas `LOGGER.debug` en cada paso de la consulta a la API externa: inicio, solicitud HTTP (filtro `ExchangeFilterFunction`), status de respuesta, deserialización, conteo/finalización, errores y mapeo 404/502.
+  - `./mvnw clean test` BUILD SUCCESS (45 tests); trazas DEBUG verificadas en la salida de `ObjetoExternoServiceTest`; `README.md` actualizado.
+
+15. **"¿Qué hicimos hasta ahora?" / continuar: fix búsqueda/creación de armas, creación por subtipo y destrucción por durabilidad 0**
+  - Dominio/servicio: `Arma.recibirDano(int)` clampa a la durabilidad (permite overkill), retorna daño aplicado y, si llega a 0, `ArmaService.aplicarDano`/`simular` eliminan el arma; `ArmaDeFuego.dispararA` usa el daño aplicado real.
+  - Contratos REST: `POST /api/armas/{id}/dano` responde 200 con `DanoResponse {id,nombre,durabilidad,danoAplicado,destruida}`; `SimulacionResponse` incluye `objetivoDestruido`; agregados endpoints de creación por subtipo `POST /api/armas/{fusil,escopeta,pistola,francotirador,humo,granada,flash}` además del POST polimórfico.
+  - Manejo de errores/config: `ApiExceptionHandler` mapea `HttpMessageNotReadableException` a 400 `CUERPO_INVALIDO` y desempaqueta causas de dominio para preservar el `tipo`; `spring.jackson.deserialization.fail-on-unknown-properties=true`.
+  - Pruebas/docs: actualizados `ArmaTest` y `ArmaCrudControllerTest` (clamp/destrucción, respuesta de daño, creación por subtipo, cuerpo inconsistente→400) y documentación (`README.md`, `docs/insomnia-poo08.md`, `docs/insomnia-poo08.json`, `docs/especificaciones-poo08-cs2.md`). Verificado en verde: `ArmaTest`, `ArmaCrudControllerTest` (19), `ArmaControllerTest`, `OpenApiDocumentationTest`, `ObjetoExternoServiceTest`, `ApplicationTests` (total 50, 0 fallos).

@@ -14,5 +14,6 @@ public record SimulacionResponse(
         @Schema(description = "Munición del recargador antes de recargar") int recargadorMunicionAntes,
         @Schema(description = "Munición del recargador después de recargar") int recargadorMunicionDespues,
         @Schema(description = "Daño aplicado al objetivo") int danoAplicado,
-        @Schema(description = "Munición recargada") int municionRecargada) {
+        @Schema(description = "Munición recargada") int municionRecargada,
+        @Schema(description = "Indica si el objetivo fue destruido") boolean objetivoDestruido) {
 }
