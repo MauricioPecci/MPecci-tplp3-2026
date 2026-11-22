@@ -15,9 +15,11 @@ import org.springframework.web.reactive.function.client.WebClientException;
 import org.springframework.web.reactive.function.client.WebClientResponseException.NotFound;
 import py.edu.uc.lp3.exceptions.ArmaDominioException;
 import py.edu.uc.lp3.exceptions.ArmaInvalidaException;
+import py.edu.uc.lp3.exceptions.CompaneroNoDisponibleException;
 import py.edu.uc.lp3.exceptions.ArmaNoEncontradaException;
 import py.edu.uc.lp3.exceptions.CargaMunicionException;
 import py.edu.uc.lp3.exceptions.DanoInvalidoException;
+import py.edu.uc.lp3.exceptions.ValidacionCompaneroRechazadaException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -67,6 +69,35 @@ public class ApiExceptionHandler {
         body.put("error", e.getMessage());
         body.put("rechazo", "regla de dominio violada");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(ValidacionCompaneroRechazadaException.class)
+    public ResponseEntity<Map<String, Object>> validacionCompaneroRechazada(
+            ValidacionCompaneroRechazadaException e) {
+        LOGGER.debug("La regla de {} rechazó la operación: {}", e.getCompanero(), e.getCuerpoExterno());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tipo", "RECHAZO_" + e.getCompanero());
+        body.put("error", e.getMessage());
+        body.put("companero", e.getCompanero());
+        body.put("codigoExterno", e.getEstadoExterno());
+        body.put("cuerpoExterno", e.getCuerpoExterno());
+        HttpStatus estado = switch (e.getEstadoExterno()) {
+            case 404 -> HttpStatus.NOT_FOUND;
+            case 409 -> HttpStatus.CONFLICT;
+            default -> HttpStatus.BAD_REQUEST;
+        };
+        return ResponseEntity.status(estado).body(body);
+    }
+
+    @ExceptionHandler(CompaneroNoDisponibleException.class)
+    public ResponseEntity<Map<String, Object>> companeroNoDisponible(CompaneroNoDisponibleException e) {
+        LOGGER.debug("El compañero {} no respondió: {}", e.getCompanero(), e.toString());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tipo", "SERVICIO_COMPANERO_NO_DISPONIBLE");
+        body.put("error", e.getMessage());
+        body.put("companero", e.getCompanero());
+        body.put("rechazo", "la validación externa no pudo completarse");
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(body);
     }
 
     @ExceptionHandler(NotFound.class)

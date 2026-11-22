@@ -7,6 +7,9 @@
     </Appenders>
     <Loggers>
         <Logger name="py.edu.uc.lp3.service.ObjetoExternoService" level="debug"/>
+        <Logger name="py.edu.uc.lp3.service.CompaneroA2WebClientService" level="debug"/>
+        <Logger name="py.edu.uc.lp3.service.CompaneroA3WebClientService" level="debug"/>
+        <Logger name="py.edu.uc.lp3.service.EscenarioCombateService" level="debug"/>
         <Logger name="py.edu.uc.lp3.rest.controller.ObjetoExternoController" level="debug"/>
         <Logger name="py.edu.uc.lp3.rest.controller.ApiExceptionHandler" level="debug"/>
         <Root level="info">

@@ -22,6 +22,7 @@ public class IndexController {
                         "GET|POST /api/armas",
                         "GET|PUT|DELETE /api/armas/{id}",
                         "POST /api/armas/simulacion",
+                        "POST /api/escenarios/combate-validado",
                         "POST /api/armas/{id}/dano",
                         "POST /api/armas/{id}/cargar-municion",
                         "GET /api/armas/descripcion",

@@ -95,6 +95,7 @@ Recurso: `/api/armas`. El verbo HTTP indica la operación. El controller solo tr
 | Cargar munición | `POST` | `/api/armas/{id}/cargar-municion` | 200 |
 | Disparar | `POST` | `/api/armas/{id}/disparar` | 200 |
 | Simulación | `POST` | `/api/armas/simulacion` | 200 |
+| Combate validado por A2/A3 | `POST` | `/api/escenarios/combate-validado` | 201 |
 
 Filtros de listado: `nombre` (contiene, sin distinguir mayúsculas) y `precioMax` (precio menor o igual). Si se envía `nombre`, tiene prioridad.
 
@@ -391,6 +392,13 @@ El starter `springdoc-openapi-starter-webmvc-ui` genera el documento desde los c
 - Guía: [`docs/insomnia-poo08.md`](docs/insomnia-poo08.md)
 
 Importar en Insomnia desde **Import/Export → Import Data → From File**, activar el environment `Local` y seguir el orden de la guía.
+
+## Escenario POO-09 (APIs cruzadas)
+
+- Documentación y diagramas Mermaid: [`docs/ejercicio-poo-09-cs2.md`](docs/ejercicio-poo-09-cs2.md).
+- `POST /api/escenarios/combate-validado` combina la validación de explosión HE de A2, la ráfaga de rifle de A3 y la simulación local de A1.
+- A1 persiste en su H2 recién después de recibir `200` de A2 y A3. Los rechazos ajenos se traducen a `400`/`404`/`409` según el código externo; un fallo de transporte se traduce a `502`.
+- Las URLs ajenas se externalizan con `A2_BASE_URL`, `A2_EXPLOSION_VALIDAR_PATH`, `A3_BASE_URL` y `A3_RAFAGA_PATH`.
 
 ## Diagrama (resumen POO-08)
 

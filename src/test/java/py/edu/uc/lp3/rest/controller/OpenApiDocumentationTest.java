@@ -28,6 +28,7 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/armas']").exists())
                 .andExpect(jsonPath("$.paths['/api/armas/{id}']").exists())
                 .andExpect(jsonPath("$.paths['/api/armas/simulacion']").exists())
+                .andExpect(jsonPath("$.paths['/api/escenarios/combate-validado']").exists())
                 .andExpect(jsonPath("$.paths['/api/armas/{id}/dano']").exists())
                 .andExpect(jsonPath("$.paths['/api/armas/{id}/cargar-municion']").exists())
                 .andExpect(jsonPath("$.paths['/api/armas/{id}/disparar']").exists())
