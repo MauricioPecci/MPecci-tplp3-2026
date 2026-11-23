@@ -101,7 +101,7 @@ Las URLs y las rutas ajenas no están escritas en la lógica del servicio: se le
 
 | Propiedad | Variable de entorno | Valor por defecto |
 |---|---|---|
-| `api.a2.base-url` | `A2_BASE_URL` | `https://ariel.tail26e794.ts.net` |
+| `api.a2.base-url` | `A2_BASE_URL` | `http://10.30.14.44:8080` |
 | `api.a2.explosion-validar-path` | `A2_EXPLOSION_VALIDAR_PATH` | `/api/explosiones/validar` |
 | `api.a3.base-url` | `A3_BASE_URL` | `http://100.95.213.93:8081` |
 | `api.a3.rafaga-path` | `A3_RAFAGA_PATH` | `/armas/{tipo}/disparar` |

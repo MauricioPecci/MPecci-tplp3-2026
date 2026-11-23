@@ -101,3 +101,11 @@
    - Reemplazados `docs/insomnia-poo08.json` y `docs/insomnia/insomnia-poo09.json` por un único export `docs/insomnia/insomnia-cs2.json` con formato Insomnia v4.
    - El archivo único conserva dos workspaces (`POO-08 CS2` y `POO-09 CS2 - APIs cruzadas`), 4 environments, 10 carpetas, 44 requests y 11 respuestas guardadas: 71 recursos con ids únicos y `parentId` válidos.
    - Actualizadas las referencias en `README.md`, `docs/insomnia-poo08.md` y `docs/especificaciones-poo08-cs2.md`.
+
+22. **Cambio de URL de A2 (Ariel)**
+   - La URL base pasó de `https://ariel.tail26e794.ts.net` a `http://10.30.14.44:8080`; Swagger UI: `http://10.30.14.44:8080/swagger-ui/index.html` y OpenAPI: `http://10.30.14.44:8080/v3/api-docs`.
+   - Actualizados `application.properties`, `README.md`, `docs/ejercicio-poo-09-cs2.md` y el environment `Grupo CS2` de `docs/insomnia/insomnia-cs2.json`.
+
+23. **Cambio de URL de A1 (Mauricio)**
+   - La URL base pasó de `https://desktop-hrm8vjo.tailde75e4.ts.net` a `http://10.30.14.44:8080`; Swagger UI indicado: `http://10.30.14.44:8080/swagger-ui/index.htm` y OpenAPI: `http://10.30.14.44:8080/v3/api-docs`.
+   - Actualizados el mapa del grupo en `README.md` y el environment `Grupo CS2` de `docs/insomnia/insomnia-cs2.json`.
