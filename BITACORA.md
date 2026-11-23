@@ -109,3 +109,8 @@
 23. **Cambio de URL de A1 (Mauricio)**
    - La URL base pasó de `https://desktop-hrm8vjo.tailde75e4.ts.net` a `http://10.30.14.44:8080`; Swagger UI indicado: `http://10.30.14.44:8080/swagger-ui/index.htm` y OpenAPI: `http://10.30.14.44:8080/v3/api-docs`.
    - Actualizados el mapa del grupo en `README.md` y el environment `Grupo CS2` de `docs/insomnia/insomnia-cs2.json`.
+
+24. **Corrección de la URL de A1**
+   - `http://10.30.14.44:8080` responde como A2 (Ariel): `/v3/api-docs` identifica `API Counter-Strike 2 — LP3 CYT646 (Ariel Gaona) POO-09` y el `POST /api/armas` del setup devuelve `400 TipoArmaNoSoportadoException` con valores válidos `rifle, pistola, granada-humo, granada-he`.
+   - A1 es este servicio y está en `http://localhost:8080`: el mismo body del setup responde `201`; Swagger válido `http://localhost:8080/swagger-ui/index.html` (`index.htm` da `404`).
+   - Restaurados `a1BaseUrl` en el environment `Grupo CS2` y el mapa del grupo en `README.md`; A2 conserva `http://10.30.14.44:8080`.

@@ -76,7 +76,7 @@
       "created": 1763875200000,
       "name": "Grupo CS2",
       "data": {
-        "a1BaseUrl": "http://10.30.14.44:8080",
+        "a1BaseUrl": "http://localhost:8080",
         "a2BaseUrl": "http://10.30.14.44:8080",
         "a3BaseUrl": "http://100.95.213.93:8081",
         "atacanteId": 1,
