@@ -37,6 +37,7 @@ public class CompaneroA3WebClientService implements CompaneroA3Client {
     @Override
     public Map<String, Object> validarRafaga(RafagaA3Request request) {
         if (request == null || request.tipo() == null || request.tipo().isBlank()) {
+            LOGGER.debug("Validación local de A3 rechazada: el tipo de arma es obligatorio");
             throw new ArmaInvalidaException("El tipo de arma de A3 es obligatorio");
         }
         LOGGER.debug("Validando ráfaga en A3: tipo={}, distancia={}, veces={}",
@@ -52,6 +53,7 @@ public class CompaneroA3WebClientService implements CompaneroA3Client {
                     })
                     .defaultIfEmpty(Map.of())
                     .block();
+            LOGGER.debug("Cuerpo de respuesta de A3 para {} (veces={}): {}", request.tipo(), request.veces(), respuesta);
             LOGGER.debug("A3 aceptó la ráfaga de {}", request.tipo());
             return respuesta;
         } catch (WebClientResponseException e) {

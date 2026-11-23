@@ -73,3 +73,31 @@
    - URL externalizable en `application.properties`: `A2_BASE_URL`, `A2_EXPLOSION_VALIDAR_PATH`, `A3_BASE_URL`, `A3_RAFAGA_PATH`; trazas DEBUG agregadas en `log4j2.xml` y `ApiExceptionHandler` traduce rechazos a `400`/`404`/`409` y caídas a `502`.
    - Documentación nueva: `docs/ejercicio-poo-09-cs2.md` con un diagrama de secuencia Mermaid limpio para el camino feliz (incluye el `GET /api/armas` que muestra la jugada guardada) y diagramas separados para rechazo A2 `400`, conflicto A2 `409`, rechazo A3 `400`, compañero no disponible `502` y regla local inválida `400`. Los diagramas de rechazo A2/A3 muestran el `GET` previo/posterior con el H2 igual y el cuerpo con `companero` + `RECHAZO_A2`/`RECHAZO_A3`; `README.md` referencia el caso.
    - Pruebas nuevas: `CompaneroA2WebClientServiceTest`, `CompaneroA3WebClientServiceTest`, `EscenarioCombateServiceTest`, `ApiExceptionHandlerCompaneroTest` y aserción en `OpenApiDocumentationTest`. Verificado: 12 pruebas puntuales en verde. `./mvnw test`: 62 pruebas, 2 fallos preexistentes de `ArmaControllerTest` (esperan 400 y obtienen 200), sin errores nuevos.
+
+17. **"Deja en `insomnia/` o `docs/insomnia/` la colección de APIs cruzadas, y en el README el mapa del grupo; agrega log4j en nivel debug para todos los pasos de la integración con otros servicios"**
+   - Colección nueva: `docs/insomnia/insomnia-poo09.json` con formato Insomnia v4, environment **Grupo CS2** (`a1BaseUrl`, `a2BaseUrl`, `a3BaseUrl`, ids locales y `granadaId`), OpenAPI de A1/A2/A3, validaciones directas de A2/A3, setup de la H2 de A1, escenario feliz, rechazo A2, rechazo A3 y `GET` previo/posterior para demostrar que la base queda igual. Incluye respuestas guardadas del feliz y de cada rechazo.
+   - `README.md`: tabla del mapa A1/A2/A3 con dueño, repositorio/rama, URL base, OpenAPI y dos reglas por dueño; orden de clonado/arranque de los tres servicios y enlace a la colección POO-09.
+   - Trazas DEBUG: `EscenarioCombateController` registra recepción y respuesta; `EscenarioCombateService` registra validación de entrada, los tres pasos (A2 → A3 → simulación local), respuestas y rechazos/no disponibilidad/regla local; `CompaneroA2WebClientService` y `CompaneroA3WebClientService` registran configuración, validación local, URL preparada, status, cuerpo de respuesta y errores. `log4j2.xml` habilita el logger del controller del escenario; la integración con `api.restful-api.dev` ya tenía trazas DEBUG.
+   - Verificación: JSON válido con 38 recursos y sin `_id` duplicados. La suite final quedó en 63 pruebas en verde tras las entradas 18 y 19.
+
+18. **Cierre de las validaciones que faltaban y de la navegación**
+   - `ArmaService.validar` quedó público para que los endpoints de demostración usen las mismas reglas del servicio: `ArmaController` valida el `Fusil` y el `Humo` construidos desde la URL, de modo que `precio=-1` y `precision=250` devuelven `400` con `$.error`.
+   - Regla de escopeta endurecida: `perdigon <= 0` ahora se rechaza con `ARMA_INVALIDA` y no persiste. Agregado el caso `perdigon: 0` a `ArmaCrudControllerTest`; también se mantiene el rechazo de `dano` negativo.
+   - `docs/ejercicio-poo-09-cs2.md`: la navegación ahora apunta al enunciado oficial `ejercicio-poo-09-apis-cruzadas-2026-11-16.md` y conserva el enlace al ejemplo UNO.
+   - Verificado: `./mvnw -Dtest=ArmaControllerTest,ArmaCrudControllerTest test` → 32 pruebas en verde.
+
+19. **Esquema de errores en OpenAPI**
+   - DTO nuevo `ErrorResponse` con `tipo`, `error`, `rechazo`, `companero`, `codigoExterno` y `cuerpoExterno`.
+   - `EscenarioCombateController` documenta los bodies de error `400`, `404`, `409` y `502` con `$ref` a `ErrorResponse`; `ArmaCrudController` documenta los errores de `POST /api/armas`, `GET /api/armas/{id}` y `POST /api/armas/simulacion`.
+   - `OpenApiDocumentationTest` verifica el esquema en `components.schemas.ErrorResponse` y las referencias desde los response codes de integración y CRUD.
+   - Verificación final: `git diff --check` sin hallazgos; `./mvnw test` → 63 pruebas, 0 fallos y 0 errores.
+
+20. **Limpieza de diagramas Mermaid**
+   - `docs/ejercicio-poo-09-cs2.md` quedó con un solo bloque Mermaid bajo `## Diagrama limpio`: cliente → A2 → A3 → simulación local en A1 → `201` → `GET /api/armas`.
+   - Eliminados los bloques y secciones de rechazo A2 `400`/`409`, rechazo A3 `400`, compañero no disponible `502`, regla local inválida `400` y la tabla de respuestas de error. El paso 3 ya no menciona códigos de error.
+   - `README.md` referencia el archivo como diagrama Mermaid del recorrido exitoso.
+
+21. **Unificación de las colecciones Insomnia**
+   - Reemplazados `docs/insomnia-poo08.json` y `docs/insomnia/insomnia-poo09.json` por un único export `docs/insomnia/insomnia-cs2.json` con formato Insomnia v4.
+   - El archivo único conserva dos workspaces (`POO-08 CS2` y `POO-09 CS2 - APIs cruzadas`), 4 environments, 10 carpetas, 44 requests y 11 respuestas guardadas: 71 recursos con ids únicos y `parentId` válidos.
+   - Actualizadas las referencias en `README.md`, `docs/insomnia-poo08.md` y `docs/especificaciones-poo08-cs2.md`.

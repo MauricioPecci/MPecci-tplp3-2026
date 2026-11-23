@@ -33,7 +33,7 @@ Completar el servicio HTTP de CS2 con un **CRUD REST persistido en H2** para la 
 
 8. **Documentación y diagrama.** `README.md` describe el modelo persistido, los endpoints, las reglas, la simulación y las decisiones; responde las preguntas de «Qué hay que pensar» y incluye un diagrama Mermaid alineado con `src/`.
 
-9. **Colección Insomnia (consigna 9).** Incluida como colección exportable en [`docs/insomnia-poo08.json`](insomnia-poo08.json), con guía en [`docs/insomnia-poo08.md`](insomnia-poo08.md). Contiene CRUD, filtros, endpoints de interfaces, simulación y un request por cada excepción hija, con environment `Local` y requests encadenados por variables (`fusilId`, `humoId`, `pistolaId`, `tempId`).
+9. **Colección Insomnia (consigna 9).** Incluida como colección exportable en [`docs/insomnia/insomnia-cs2.json`](insomnia/insomnia-cs2.json), con guía en [`docs/insomnia-poo08.md`](insomnia-poo08.md). Contiene CRUD, filtros, endpoints de interfaces, simulación y un request por cada excepción hija, con environment `Local` y requests encadenados por variables (`fusilId`, `humoId`, `pistolaId`, `tempId`).
 
 ## 3. Cómo probarlo
 
@@ -100,13 +100,13 @@ Respuesta esperada de la simulación (extracto):
 }
 ```
 
-Alternativa con Insomnia: importar `docs/insomnia-poo08.json`, activar el environment `Local` y seguir `docs/insomnia-poo08.md`.
+Alternativa con Insomnia: importar `docs/insomnia/insomnia-cs2.json`, activar el environment `Local` y seguir `docs/insomnia-poo08.md`.
 
 ## 4. Enlace al commit de la solución
 
 Commit de código: <https://github.com/MauricioPecci/MPecci-tplp3-2026/commit/266806889448df36305a78a309e449f1e61cca55>
 
-La colección Insomnia y su guía están en `docs/insomnia-poo08.json` y `docs/insomnia-poo08.md`.
+La colección Insomnia y su guía están en `docs/insomnia/insomnia-cs2.json` y `docs/insomnia-poo08.md`.
 
 ## 5. Recorrido de corrección (5 a 7 minutos)
 
@@ -114,5 +114,5 @@ La colección Insomnia y su guía están en `docs/insomnia-poo08.json` y `docs/i
 2. Leer el README: modelo persistido (`SINGLE_TABLE` + `tipo_arma`), tabla de endpoints, simulación y decisiones.
 3. Ver `Arma` como `@Entity` raíz, `ArmaDeFuego`/`Arrojadiza` como `@MappedSuperclass` y las concretas con `@DiscriminatorValue`; confirmar que no queda `ArmaEntity`.
 4. Arrancar `./mvnw spring-boot:run` y correr la secuencia curl: crear las tres armas, ejecutar la simulación y verificar con `GET` que la munición del Fusil, la durabilidad del Humo y la munición de la Pistola cambiaron y persistieron.
-5. Importar `docs/insomnia-poo08.json` en Insomnia, activar el environment `Local` y ejecutar las carpetas en orden; `docs/insomnia-poo08.md` detalla los resultados esperados.
+5. Importar `docs/insomnia/insomnia-cs2.json` en Insomnia, activar el environment `Local` y ejecutar las carpetas en orden; `docs/insomnia-poo08.md` detalla los resultados esperados.
 6. Pregunta de anclaje: el controller solo traduce HTTP; el service valida y orquesta; el dominio aplica las reglas y lanza excepciones; el repositorio persiste. Un `POST /api/armas/{id}/dano` con daño mayor a la durabilidad responde 200, clampa el daño a la durabilidad restante, destruye el arma si llega a 0 y devuelve `DanoResponse` indicando `destruida`; una recarga que supera el máximo responde 400 `CARGA_MUNICION_INVALIDA` y no deja estado parcial. Un cuerpo malformado o con propiedades desconocidas responde 400 `CUERPO_INVALIDO`.

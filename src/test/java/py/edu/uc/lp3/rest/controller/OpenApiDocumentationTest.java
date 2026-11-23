@@ -1,5 +1,6 @@
 package py.edu.uc.lp3.rest.controller;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -41,6 +42,25 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/objetos/{id}']").exists())
                 .andExpect(jsonPath("$.paths['/api/objetos'].get.summary").value("Listar objetos externos"))
                 .andExpect(jsonPath("$.paths['/api/armas'].post.responses['201']").exists());
+    }
+
+    @Test
+    void elDocumentoOpenApiIncluyeElEsquemaDeErroresDeIntegracion() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.tipo").exists())
+                .andExpect(jsonPath("$.paths['/api/escenarios/combate-validado'].post.responses['400'].content['*/*'].schema.$ref")
+                        .value(containsString("ErrorResponse")))
+                .andExpect(jsonPath("$.paths['/api/escenarios/combate-validado'].post.responses['404'].content['*/*'].schema.$ref")
+                        .value(containsString("ErrorResponse")))
+                .andExpect(jsonPath("$.paths['/api/escenarios/combate-validado'].post.responses['409'].content['*/*'].schema.$ref")
+                        .value(containsString("ErrorResponse")))
+                .andExpect(jsonPath("$.paths['/api/escenarios/combate-validado'].post.responses['502'].content['*/*'].schema.$ref")
+                        .value(containsString("ErrorResponse")))
+                .andExpect(jsonPath("$.paths['/api/armas'].post.responses['400'].content['*/*'].schema.$ref")
+                        .value(containsString("ErrorResponse")))
+                .andExpect(jsonPath("$.paths['/api/armas/simulacion'].post.responses['400'].content['*/*'].schema.$ref")
+                        .value(containsString("ErrorResponse")));
     }
 
     @Test

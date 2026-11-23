@@ -39,6 +39,7 @@ public class CompaneroA2WebClientService implements CompaneroA2Client {
     @Override
     public Map<String, Object> validarExplosion(ExplosionA2Request request) {
         if (request == null || request.granadaId() == null || request.granadaId() <= 0) {
+            LOGGER.debug("Validación local de A2 rechazada: el id de la granada debe ser mayor a 0");
             throw new ArmaInvalidaException("El id de la granada de A2 debe ser mayor a 0");
         }
         LOGGER.debug("Validando explosión en A2: granadaId={}, centro=({},{},{})",
@@ -53,6 +54,7 @@ public class CompaneroA2WebClientService implements CompaneroA2Client {
                     })
                     .defaultIfEmpty(Map.of())
                     .block();
+            LOGGER.debug("Cuerpo de respuesta de A2 para la granada {}: {}", request.granadaId(), respuesta);
             LOGGER.debug("A2 aceptó la explosión de la granada {}", request.granadaId());
             return respuesta;
         } catch (WebClientResponseException e) {

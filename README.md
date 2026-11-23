@@ -388,17 +388,45 @@ El starter `springdoc-openapi-starter-webmvc-ui` genera el documento desde los c
 
 ## Colección Insomnia
 
-- Exportable: [`docs/insomnia-poo08.json`](docs/insomnia-poo08.json)
-- Guía: [`docs/insomnia-poo08.md`](docs/insomnia-poo08.md)
+- Colección única (POO-08 + POO-09): [`docs/insomnia/insomnia-cs2.json`](docs/insomnia/insomnia-cs2.json)
+- Guía POO-08: [`docs/insomnia-poo08.md`](docs/insomnia-poo08.md)
 
-Importar en Insomnia desde **Import/Export → Import Data → From File**, activar el environment `Local` y seguir el orden de la guía.
+Importar en Insomnia desde **Import/Export → Import Data → From File**. El archivo crea dos workspaces: `POO-08 CS2` (environment `Local`) y `POO-09 CS2 - APIs cruzadas` (environment `Grupo CS2`). En POO-09, las variables `a1BaseUrl`, `a2BaseUrl` y `a3BaseUrl` apuntan a los tres servicios, y la colección trae las respuestas guardadas del escenario feliz y de cada rechazo.
 
 ## Escenario POO-09 (APIs cruzadas)
 
-- Documentación y diagramas Mermaid: [`docs/ejercicio-poo-09-cs2.md`](docs/ejercicio-poo-09-cs2.md).
+- Documentación y diagrama Mermaid del recorrido exitoso: [`docs/ejercicio-poo-09-cs2.md`](docs/ejercicio-poo-09-cs2.md).
 - `POST /api/escenarios/combate-validado` combina la validación de explosión HE de A2, la ráfaga de rifle de A3 y la simulación local de A1.
 - A1 persiste en su H2 recién después de recibir `200` de A2 y A3. Los rechazos ajenos se traducen a `400`/`404`/`409` según el código externo; un fallo de transporte se traduce a `502`.
 - Las URLs ajenas se externalizan con `A2_BASE_URL`, `A2_EXPLOSION_VALIDAR_PATH`, `A3_BASE_URL` y `A3_RAFAGA_PATH`.
+
+### Mapa del grupo
+
+| Rol | Dueño | Repositorio | URL base | OpenAPI | Dos reglas del dueño |
+|---|---|---|---|---|---|
+| A1 | Mauricio Pecci (este servicio) | [MPecci-tplp3-2026 / `feature/rest`](https://github.com/MauricioPecci/MPecci-tplp3-2026/tree/feature/rest) | `https://desktop-hrm8vjo.tailde75e4.ts.net` | [`swagger-ui`](https://desktop-hrm8vjo.tailde75e4.ts.net/swagger-ui/index.html) · [`v3/api-docs`](https://desktop-hrm8vjo.tailde75e4.ts.net/v3/api-docs) | Un arma de fuego dispara a un objetivo, consume munición y reduce su durabilidad; el sobre-daño se clampa y si la durabilidad llega a 0 el arma se destruye. Un arma de fuego recarga munición desde la reserva hasta su capacidad máxima; las granadas no se recargan. |
+| A2 | Ariel Gaona | [agaona-taller-git-2026 / `feature/RESTApi`](https://github.com/ferue/agaona-taller-git-2026/tree/feature/RESTApi) | `https://ariel.tail26e794.ts.net` | [`swagger-ui`](https://ariel.tail26e794.ts.net/swagger-ui/index.html) · [`v3/api-docs`](https://ariel.tail26e794.ts.net/v3/api-docs) | Una granada HE daña a todos los jugadores vivos dentro de su radio, aliados incluidos; el daño baja con la distancia y el chaleco lo reduce a la mitad. Toda arma tirada dentro del radio sale despedida en dirección contraria a la explosión, más lejos cuanto más cerca estaba. |
+| A3 | Vanessa Ricciardi | [vricciardi-tallerlp3-2026](https://github.com/luckvani-gif/vricciardi-tallerlp3-2026.git) | `http://100.95.213.93:8081` | [`swagger-ui`](http://100.95.213.93:8081/swagger-ui/index.html) · [`v3/api-docs`](http://100.95.213.93:8081/v3/api-docs) | Disparar consume munición o usa la granada y persiste el resultado; la distancia no puede ser negativa. Recargar pasa munición de la reserva al cargador y persiste el estado; las granadas no se pueden recargar. |
+
+El escenario usado es posible en CS2: una granada HE necesita la validación de daño/empuje de A2 y una ráfaga de rifle dentro de `1..100` de A3; recién entonces A1 dispara, daña y recarga en su propia H2.
+
+### Orden para arrancar los tres servicios
+
+```bash
+git clone --branch feature/rest https://github.com/MauricioPecci/MPecci-tplp3-2026.git a1
+git clone --branch feature/RESTApi https://github.com/ferue/agaona-taller-git-2026.git a2
+git clone https://github.com/luckvani-gif/vricciardi-tallerlp3-2026.git a3
+```
+
+Luego arrancar, en este orden, cada servicio con su wrapper (`./mvnw spring-boot:run` en los proyectos Maven):
+
+```bash
+(cd a1 && ./mvnw spring-boot:run)
+(cd a2 && ./mvnw spring-boot:run)
+(cd a3 && ./mvnw spring-boot:run)
+```
+
+Si los servicios ajenos no están en línea, la colección POO-09 permite importar las respuestas de ejemplo guardadas para el camino feliz y para cada rechazo.
 
 ## Diagrama (resumen POO-08)
 
@@ -544,7 +572,7 @@ src/main/java/py/edu/uc/lp3/rest/config/OpenApiConfig.java     metadatos OpenAPI
 src/main/java/py/edu/uc/lp3/rest/controller/            REST + handlers
 src/main/java/py/edu/uc/lp3/rest/dto/                   request/response de simulación, disparo, daño y objeto externo
 src/test/java/py/edu/uc/lp3/                           pruebas dominio/HTTP/servicios
-docs/insomnia-poo08.json                               colección exportable
+docs/insomnia/insomnia-cs2.json                        colección única (POO-08 + POO-09)
 docs/insomnia-poo08.md                                 guía de uso de la colección
 ```
 

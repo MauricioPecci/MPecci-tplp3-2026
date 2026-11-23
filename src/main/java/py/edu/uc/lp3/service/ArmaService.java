@@ -225,7 +225,7 @@ public class ArmaService {
                 objetivoDestruido);
     }
 
-    private void validar(Arma arma) {
+    public void validar(Arma arma) {
         if (arma == null) {
             throw new ArmaInvalidaException("El arma no puede ser nula");
         }
@@ -269,7 +269,9 @@ public class ArmaService {
             validarNoNegativo("El retroceso", fusil.getRetroceso());
         }
         if (arma instanceof Escopeta escopeta) {
-            validarNoNegativo("El perdigón", escopeta.getPerdigon());
+            if (escopeta.getPerdigon() <= 0) {
+                throw new ArmaInvalidaException("El perdigón debe ser mayor a 0: " + escopeta.getPerdigon());
+            }
             validarNoNegativo("La dispersión", escopeta.getDispersion());
         }
         if (arma instanceof Francotirador francotirador) {

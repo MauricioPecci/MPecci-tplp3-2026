@@ -2,7 +2,7 @@
 
 ## Archivos
 
-- **Colección exportable:** [`docs/insomnia-poo08.json`](insomnia-poo08.json)
+- **Colección exportable:** [`docs/insomnia/insomnia-cs2.json`](insomnia/insomnia-cs2.json) (workspace `POO-08 CS2`)
 - **Guía:** este archivo
 
 La colección usa el formato de exportación **Insomnia v4** y contiene **24 requests** agrupados en cinco carpetas:
@@ -33,7 +33,7 @@ La base es H2 en memoria (`jdbc:h2:mem:armasdb`). Al reiniciar la aplicación se
 
 1. Abrir Insomnia.
 2. Menú de la aplicación → **Import/Export** → **Import Data** → **From File**.
-3. Seleccionar `docs/insomnia-poo08.json`.
+3. Seleccionar `docs/insomnia/insomnia-cs2.json`.
 4. Importar como colección. Debe aparecer **POO-08 CS2**.
 5. Abrir el selector de environment (arriba a la izquierda) y activar **Local**.
 

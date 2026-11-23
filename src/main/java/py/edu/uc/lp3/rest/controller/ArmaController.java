@@ -19,11 +19,18 @@ import py.edu.uc.lp3.domain.Granada;
 import py.edu.uc.lp3.domain.Humo;
 import py.edu.uc.lp3.domain.Pistola;
 import py.edu.uc.lp3.domain.UIcapable;
+import py.edu.uc.lp3.service.ArmaService;
 
 @Tag(name = "Armas - Demostración POO", description = "Endpoints de demostración de herencia, interfaces y sobrecarga")
 @RestController
 @RequestMapping("/api/armas")
 public class ArmaController {
+
+    private final ArmaService armaService;
+
+    public ArmaController(ArmaService armaService) {
+        this.armaService = armaService;
+    }
 
     @Operation(summary = "Describir subclases de Arma", description = "Muestra la clase concreta y la descripción de un fusil y una granada de humo.")
     @GetMapping("/descripcion")
@@ -111,6 +118,7 @@ public class ArmaController {
                         Boolean.TRUE.equals(silenciador))
                 : new Fusil(nombre, id, precio, dano, precision, recarga, velocidad,
                         Boolean.TRUE.equals(automatica));
+        armaService.validar(fusil);
 
         Map<String, Object> respuesta = new LinkedHashMap<>();
         respuesta.put("clase", fusil.getClass().getSimpleName());
@@ -149,6 +157,7 @@ public class ArmaController {
         } else {
             humo = new Humo(nombre, id, precio);
         }
+        armaService.validar(humo);
 
         Map<String, Object> respuesta = new LinkedHashMap<>();
         respuesta.put("clase", humo.getClass().getSimpleName());

@@ -2,6 +2,8 @@ package py.edu.uc.lp3.rest.controller.arma;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -26,6 +28,7 @@ import py.edu.uc.lp3.domain.Granada;
 import py.edu.uc.lp3.domain.Humo;
 import py.edu.uc.lp3.domain.Pistola;
 import py.edu.uc.lp3.rest.dto.DanoResponse;
+import py.edu.uc.lp3.rest.dto.ErrorResponse;
 import py.edu.uc.lp3.rest.dto.DisparoRequest;
 import py.edu.uc.lp3.rest.dto.DisparoResponse;
 import py.edu.uc.lp3.rest.dto.SimulacionRequest;
@@ -52,7 +55,8 @@ public class ArmaCrudController {
     }
 
     @Operation(summary = "Obtener arma por id", description = "Devuelve un arma existente a partir de su identificador.")
-    @ApiResponse(responseCode = "404", description = "No existe un arma con ese id")
+    @ApiResponse(responseCode = "404", description = "No existe un arma con ese id",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @GetMapping("/{id}")
     public ResponseEntity<Arma> getById(@PathVariable Integer id) {
         return ResponseEntity.ok(armaService.findById(id));
@@ -60,7 +64,8 @@ public class ArmaCrudController {
 
     @Operation(summary = "Crear arma", description = "Persiste un arma nueva de forma polimórfica usando tipoArma; el id lo asigna la base de datos.")
     @ApiResponse(responseCode = "201", description = "Arma creada")
-    @ApiResponse(responseCode = "400", description = "Los datos del arma no son válidos")
+    @ApiResponse(responseCode = "400", description = "Los datos del arma no son válidos",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping
     public ResponseEntity<Arma> create(@RequestBody Arma arma) {
         Arma creado = armaService.create(arma);
@@ -148,7 +153,8 @@ public class ArmaCrudController {
     }
 
     @Operation(summary = "Simular combate", description = "Un atacante dispara, el objetivo recibe daño y un tercer arma recarga munición.")
-    @ApiResponse(responseCode = "400", description = "La simulación no cumple las reglas de dominio")
+    @ApiResponse(responseCode = "400", description = "La simulación no cumple las reglas de dominio",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/simulacion")
     public ResponseEntity<SimulacionResponse> simular(@RequestBody SimulacionRequest request) {
         return ResponseEntity.ok(armaService.simular(request));

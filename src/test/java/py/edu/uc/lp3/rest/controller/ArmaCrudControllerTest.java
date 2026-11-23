@@ -291,6 +291,12 @@ class ArmaCrudControllerTest {
 
         mockMvc.perform(post("/api/armas")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .content(ESCOPETA_JSON.replace("\"perdigon\": 8", "\"perdigon\": 0")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.tipo").value("ARMA_INVALIDA"));
+
+        mockMvc.perform(post("/api/armas")
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(FLASH_JSON.replace("\"intensidad\": 100", "\"intensidad\": -1")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.tipo").value("ARMA_INVALIDA"));
