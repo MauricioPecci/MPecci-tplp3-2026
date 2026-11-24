@@ -1,0 +1,101 @@
+Corrección POO-08
+=============================================
+
+
+A. Corrección original recibida (POO-08: 19/24)
+------------------------------------------------
+
+1. Entrega y arranque - 2,5 de 3
+Lo que hiciste bien: el repositorio es público, se clona, compila y arranca con ./mvnw spring-boot:run, y pasan las 34 pruebas. El enlace de Classroom es un commit exacto. Están LICENSE, README.md y BITACORA.md, el archivo de especificaciones está en Classroom y .gitignore deja fuera target/; como la base H2 es en memoria, no hay carpeta data/ que ignorar. La consola /h2-console abre y muestra la tabla ARMAS.
+Lo que te faltó para el 3: la colección de Insomnia no está en el commit que entregaste. El último commit borró docs/insomnia-poo08.json y docs/insomnia-poo08.md (junto con los archivos de especificaciones). La adjuntaste en Classroom y se pudo importar, por eso el descuento es solo de 0,5, pero la colección tiene que estar versionada en el repositorio, en el commit que se corrige.
+Como mejora (no resta puntos): en la raíz quedó la carpeta Cs2/ con código de entregas anteriores, fuera del proyecto Maven. Si ya no se usa, conviene borrarla para que un compañero no se confunda de proyecto.
+
+2. Organización en paquetes - 2 de 3
+Lo que hiciste bien: seguiste el template: py.edu.uc.lp3.domain, rest.controller, repository, service y exceptions. ArmaRepository es una interfaz de Spring Data con consultas propias (findByNombreContainingIgnoreCase, findByDurabilidadLessThan). Los dos controllers del CRUD y de la simulación pasan siempre por ArmaService, que tiene las transacciones; ningún controller usa el repositorio.
+Lo que te faltó para el 3: el dominio lanza las excepciones y tiene la lógica de negocio. Los setters de Arma, ArmaDeFuego y Arrojadiza lanzan ArmaInvalidaException o CargaMunicionException, y recibirDano, dispararA y recargar validan y lanzan DanoInvalidoException y CargaMunicionException. Según lo acordado, las validaciones, las reglas y las excepciones van en la capa service; el dominio/Entity solo guarda el estado encapsulado. Por eso se resta 1.
+Como mejora (no resta puntos): ArmaService recibe y devuelve SimulacionRequest y SimulacionResponse, que están en rest.dto. Así la capa service depende de la capa web; conviene que esas clases vivan fuera de rest o que el controller haga la traducción.
+
+3. Ocultamiento e invariantes - 0 de 3
+Lo que hiciste bien: los atributos son privados, el id es de solo lectura en el JSON y ArmaService tiene un método privado validar que revisa el objeto antes de cada save. Un POST con precio: -1 responde 400 ARMA_INVALIDA y la lista no crece. El PUT no deja cambiar el tipo de arma.
+Lo que te faltó para el 3: algunas filas imposibles se guardan igual. Un POST de una Escopeta con perdigon: -5 y dispersion: -3 respondió 201 y quedó guardada, y lo mismo pasó con una Granada con dano: -50. En Counter-Strike 2 (CS2), una escopeta dispara una cantidad fija y positiva de perdigones (por ejemplo, la Nova dispara 9) y ningún arma hace daño negativo. Además, los constructores sin argumentos de las hijas (public Fusil(), public Escopeta() y los demás) son públicos y dejan el objeto con nombre nulo; lo acordado es que el constructor vacío que pide JPA tenga una visibilidad más restringida, por ejemplo protected. Guardar esos estados imposibles muestra un uso de la IA a ciegas, sin comprender qué se puede guardar y qué no según las reglas del juego, y por eso este criterio queda en 0.
+Lo que tendrías que haber hecho y entendido: las cantidades y los daños negativos no existen en el juego: el service tenía que rechazarlos con 400 en el POST y en el PUT, y el constructor vacío de las hijas tenía que ser protected (solo para JPA). Ese control va en el service, no en la Entity.
+
+4. Herencia, clases hijas y sobreescritura - 3 de 3
+Lo que hiciste bien: Arma es abstracta y declara describir(), que sobreescriben las ramas y las hijas con @Override; GET /api/armas/descripcion recorre la lista sin preguntar el tipo. La familia se persiste con SINGLE_TABLE, la columna tipo_arma y @MappedSuperclass en las ramas intermedias, y en el README justificás la elección. La jerarquía de excepciones tiene la base ArmaDominioException y cuatro hijas, cada una con su handler en ApiExceptionHandler y su tipo en el JSON. La interfaz Equipable la implementan Fusil y Granada, de familias distintas, y la usa GET /api/armas/equipables.
+
+5. Constructores y sobrecarga - 3 de 3
+Lo que hiciste bien: Fusil y Humo tienen constructores sobrecargados que delegan con this(...) en el completo, y las hijas llaman a super(...). También sobrecargaste un mensaje del dominio: calcularDano(), calcularDano(int) y calcularDano(int, boolean), que usa la simulación.
+
+6. Comportamiento observable - 3 de 3
+Lo que hiciste bien: se probó el CRUD completo (201, 200, 204 y 404 después del DELETE), el POST ilegal, el id inexistente y /equipables. La simulación usa tres armas ya guardadas: el Fusil pasó de 30 a 29 balas, el Humo de 100 a 64 de durabilidad y la Pistola de 12 a 17 balas, y los GET posteriores muestran esos valores guardados. Cada excepción hija tiene su pedido y su respuesta: DANO_INVALIDO, CARGA_MUNICION_INVALIDA con 999 balas, ARMA_INVALIDA al recargar el Humo y ARMA_NO_ENCONTRADA. La colección trae el CRUD, el POST ilegal, el id inexistente, la interfaz, la simulación y un pedido por cada excepción.
+Se importó tu colección en Insomnia y se probó la simulación (pedido 01 Ejecutar simulación, carpeta 03 - Simulación): respondió 200, el Fusil quedó con 29 balas, el Humo con 64 de durabilidad y la Pistola con 17 balas.
+
+7. Git - 3 de 3
+Lo que hiciste bien: usaste semantic commits en casi todo el trabajo y tus commits son atómicos y funcionales; el historial se lee bien.
+Como mejora (no resta puntos): el mensaje del último commit no dice que borra la colección y las especificaciones. Cuando un commit elimina archivos, el mensaje tiene que decir qué saca y por qué.
+
+8. Documentación - 2,5 de 3
+Lo que hiciste bien: tenés LICENSE Apache 2.0 y el README lo indica. El README explica cómo arrancar, cada propiedad de H2 en una frase, el modelo persistido, el CRUD con ejemplos, la simulación con las dos reglas, la tabla de excepciones y handlers, las diez respuestas a "Qué hay que pensar" y cómo importar la colección. Lo que dice coincide con lo que se probó. BITACORA.md indica el asistente (OpenCode), el modelo (big-pickle) y resume los prompts, y el archivo de especificaciones de Classroom trae objetivo, URL, invariantes, cómo probarlo y el enlace al commit.
+Lo que te faltó para el 3: el diagrama Mermaid no muestra las interfaces Equipable y UIcapable ni quién las implementa, y de la jerarquía de excepciones no muestra las hijas. Lo acordado es que el diagrama tenga la interfaz y las excepciones, por eso se resta 0,5.
+Como mejora (no resta puntos): por el mismo borrado del criterio 1, los enlaces del README a docs/insomnia-poo08.json y docs/insomnia-poo08.md, la sección "Estructura" y la frase de la especificación que dice que el commit contiene la colección quedaron desactualizados. Ya se descontó una vez en el criterio 1.
+
+
+B. Soluciones aplicadas a los criterios con descuento
+------------------------------------------------------
+
+
+Criterio 1 — Entrega y arranque: 2,5/3 (-0,5)
+Situación anterior: la colección de Insomnia no estaba versionada en el commit
+entregado; el último commit de esa entrega borraba docs/insomnia-poo08.json y
+docs/insomnia-poo08.md.
+Solución aplicada:
+  - La colección quedó integrada y versionada en
+    docs/insomnia/insomnia-cs2.json (export Insomnia v4, workspaces POO-08 y
+    POO-09).
+  - La guía de uso quedó en docs/insomnia-poo08.md.
+  - README.md referencia ambos archivos en la sección "Colección Insomnia" y en
+    "Estructura".
+Estado: cerrado.
+
+
+Criterio 2 — Organización en paquetes: 2/3 (-1)
+Situación anterior: el dominio lanzaba excepciones y contenía las reglas de
+negocio; según lo acordado, esas responsabilidades debían estar en la capa
+service.
+Solución aplicada:
+  - Las validaciones, reglas y lanzamientos de excepción viven en
+    ArmaService.validar(...) (src/main/java/py/edu/uc/lp3/service/ArmaService.java:228-313).
+  - Las entidades de src/main/java/py/edu/uc/lp3/domain/ solo guardan estado
+    encapsulado: no contienen "throw new" ni importan la jerarquía de
+    excepciones.
+  - Los controllers delegan siempre en ArmaService; ninguno usa ArmaRepository
+    directamente.
+Estado: cerrado. 
+
+
+Criterio 3 — Ocultamiento e invariantes: 0/3 (-3)
+Situación anterior: se persistían escopetas con perdigón negativo y granadas con
+daño negativo, y los constructores sin argumentos de las hijas eran públicos.
+Solución aplicada:
+  - ArmaService.validar(...) rechaza:
+      * perdigón <= 0 y dispersión negativa en Escopeta (líneas 271-276);
+      * daño explosivo negativo en Granada (líneas 298-302);
+      * precio negativo, durabilidad <= 0, daño negativo de arma de fuego,
+        precisión fuera de 0..100, munición incoherente y campos obligatorios
+        vacíos (líneas 228-307).
+  - Los constructores vacíos exigidos por JPA son protected en Fusil, Escopeta,
+    Pistola, Francotirador, Humo, Granada y Flash.
+  - Se agregó el caso de perdigón 0 a ArmaCrudControllerTest y se hicieron
+    públicas las reglas de validación para que los endpoints de demostración
+    usen el mismo servicio (BITACORA.md, entrada 18).
+Estado: cerrado. 
+
+Criterio 8 — Documentación: 2,5/3 (-0,5)
+Situación anterior: el diagrama Mermaid no mostraba las interfaces Equipable y
+UIcapable ni las hijas de la jerarquía de excepciones.
+Solución aplicada:
+  - El diagrama de README.md, sección "Diagrama (resumen POO-08)", incluye
+    UIcapable, Equipable, quién las implementa y las cuatro hijas de
+    ArmaDominioException con sus handlers.
+Estado: cerrado.
+

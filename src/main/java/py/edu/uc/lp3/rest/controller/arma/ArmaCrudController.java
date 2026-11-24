@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
-import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,6 +26,10 @@ import py.edu.uc.lp3.domain.Fusil;
 import py.edu.uc.lp3.domain.Granada;
 import py.edu.uc.lp3.domain.Humo;
 import py.edu.uc.lp3.domain.Pistola;
+import py.edu.uc.lp3.exceptions.CargaMunicionException;
+import py.edu.uc.lp3.exceptions.DanoInvalidoException;
+import py.edu.uc.lp3.rest.dto.CargaMunicionRequest;
+import py.edu.uc.lp3.rest.dto.DanoRequest;
 import py.edu.uc.lp3.rest.dto.DanoResponse;
 import py.edu.uc.lp3.rest.dto.ErrorResponse;
 import py.edu.uc.lp3.rest.dto.DisparoRequest;
@@ -136,8 +139,10 @@ public class ArmaCrudController {
     }
 
     @Operation(summary = "Actualizar arma", description = "Reemplaza los datos de un arma existente sin cambiar su tipo.")
-    @ApiResponse(responseCode = "404", description = "No existe un arma con ese id")
-    @ApiResponse(responseCode = "400", description = "Los datos del arma no son válidos")
+    @ApiResponse(responseCode = "404", description = "No existe un arma con ese id",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Los datos del arma no son válidos",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PutMapping("/{id}")
     public ResponseEntity<Arma> update(@PathVariable Integer id, @RequestBody Arma arma) {
         return ResponseEntity.ok(armaService.update(id, arma));
@@ -160,20 +165,35 @@ public class ArmaCrudController {
         return ResponseEntity.ok(armaService.simular(request));
     }
 
-    @Operation(summary = "Aplicar daño", description = "Reduce la durabilidad del arma indicada; si llega a 0 se destruye. El cuerpo espera la clave dano.")
-    @ApiResponse(responseCode = "200", description = "Daño aplicado; la respuesta indica si el arma fue destruida")
-    @ApiResponse(responseCode = "400", description = "El daño no es válido")
+    @Operation(summary = "Aplicar daño", description = "Reduce la durabilidad del arma indicada; si llega a 0 se destruye.")
+    @ApiResponse(responseCode = "200", description = "Daño aplicado; la respuesta indica si el arma fue destruida",
+            content = @Content(schema = @Schema(implementation = DanoResponse.class)))
+    @ApiResponse(responseCode = "400", description = "El daño no es válido",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "No existe un arma con ese id",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/{id}/dano")
-    public ResponseEntity<DanoResponse> aplicarDano(@PathVariable Integer id, @RequestBody Map<String, Integer> body) {
-        int dano = body != null && body.get("dano") != null ? body.get("dano") : 0;
+    public ResponseEntity<DanoResponse> aplicarDano(@PathVariable Integer id, @RequestBody DanoRequest body) {
+        Integer dano = body != null ? body.dano() : null;
+        if (dano == null) {
+            throw new DanoInvalidoException("El campo dano es obligatorio");
+        }
         return ResponseEntity.ok(armaService.aplicarDano(id, dano));
     }
 
-    @Operation(summary = "Cargar munición", description = "Recarga un arma de fuego hasta su munición máxima; el cuerpo espera la clave cantidad.")
-    @ApiResponse(responseCode = "400", description = "La cantidad o el tipo de arma no son válidos")
+    @Operation(summary = "Cargar munición", description = "Recarga un arma de fuego hasta su munición máxima.")
+    @ApiResponse(responseCode = "200", description = "Munición cargada; devuelve el arma actualizada",
+            content = @Content(schema = @Schema(implementation = Arma.class)))
+    @ApiResponse(responseCode = "400", description = "La cantidad o el tipo de arma no son válidos",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "No existe un arma con ese id",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/{id}/cargar-municion")
-    public ResponseEntity<Arma> cargarMunicion(@PathVariable Integer id, @RequestBody Map<String, Integer> body) {
-        int cantidad = body != null && body.get("cantidad") != null ? body.get("cantidad") : 0;
+    public ResponseEntity<Arma> cargarMunicion(@PathVariable Integer id, @RequestBody CargaMunicionRequest body) {
+        Integer cantidad = body != null ? body.cantidad() : null;
+        if (cantidad == null) {
+            throw new CargaMunicionException("El campo cantidad es obligatorio");
+        }
         return ResponseEntity.ok(armaService.cargarMunicion(id, cantidad));
     }
 

@@ -5,6 +5,19 @@ Servicio HTTP construido con **Spring Boot** (Maven, Java 21, Spring Web + Sprin
 Ejercicios: POO-06/07/08 del taller de Git y Lenguaje de Programación 3 (CYT646).  
 POO-08: <https://github.com/alefq/afq-taller-git-2024/blob/main/docs/ejercicio-poo-08-crud-h2-insomnia-2026-10-28.md>
 
+## Situación de POO-08
+
+La corrección de POO-08 tuvo observaciones y descuentos (**19/24**). Todas están cerradas en este commit; el detalle está en [`docs/correccion-poo8.txt`](docs/correccion-poo8.txt):
+
+| Criterio | Cierre aplicado |
+|---|---|
+| 1. Entrega y arranque (2,5/3) | Colección Insomnia versionada en `docs/insomnia/insomnia-cs2.json` y guía en `docs/insomnia-poo08.md`. |
+| 2. Organización en paquetes (2/3) | Validaciones, reglas y excepciones movidas del dominio a `ArmaService`; las entidades solo guardan estado. |
+| 3. Ocultamiento e invariantes (0/3) | `ArmaService.validar` rechaza perdigón `<= 0`, daño negativo de granada y estados inválidos; constructores vacíos de las hijas reducidos a `protected` para JPA. |
+| 8. Documentación (2,5/3) | Diagrama Mermaid ampliado con `Equipable`, `UIcapable` y la jerarquía completa de excepciones. |
+
+Los criterios 4, 5, 6 y 7 ya tenían puntaje completo y no requirieron cambios.
+
 ## Cómo arrancar
 
 ```bash
@@ -396,19 +409,36 @@ Importar en Insomnia desde **Import/Export → Import Data → From File**. El a
 ## Escenario POO-09 (APIs cruzadas)
 
 - Documentación y diagrama Mermaid del recorrido exitoso: [`docs/ejercicio-poo-09-cs2.md`](docs/ejercicio-poo-09-cs2.md).
-- `POST /api/escenarios/combate-validado` combina la validación de explosión HE de A2, la ráfaga de rifle de A3 y la simulación local de A1.
+- `POST /api/escenarios/combate-validado` combina la validación de explosión HE de A2, la ráfaga de demostración de A3 y la simulación local de A1.
 - A1 persiste en su H2 recién después de recibir `200` de A2 y A3. Los rechazos ajenos se traducen a `400`/`404`/`409` según el código externo; un fallo de transporte se traduce a `502`.
-- Las URLs ajenas se externalizan con `A2_BASE_URL`, `A2_EXPLOSION_VALIDAR_PATH`, `A3_BASE_URL` y `A3_RAFAGA_PATH`.
+- Las URLs ajenas se externalizan con `A2_BASE_URL`, `A2_EXPLOSION_VALIDAR_PATH`, `A3_BASE_URL` y `A3_RAFAGA_PATH` (`/armas/{tipo}/disparar`).
 
 ### Mapa del grupo
 
 | Rol | Dueño | Repositorio | URL base | OpenAPI | Dos reglas del dueño |
 |---|---|---|---|---|---|
-| A1 | Mauricio Pecci (este servicio) | [MPecci-tplp3-2026 / `feature/rest`](https://github.com/MauricioPecci/MPecci-tplp3-2026/tree/feature/rest) | `http://localhost:8080` | [`swagger-ui`](http://localhost:8080/swagger-ui/index.html) · [`v3/api-docs`](http://localhost:8080/v3/api-docs) | Un arma de fuego dispara a un objetivo, consume munición y reduce su durabilidad; el sobre-daño se clampa y si la durabilidad llega a 0 el arma se destruye. Un arma de fuego recarga munición desde la reserva hasta su capacidad máxima; las granadas no se recargan. |
-| A2 | Ariel Gaona | [agaona-taller-git-2026 / `feature/RESTApi`](https://github.com/ferue/agaona-taller-git-2026/tree/feature/RESTApi) | `http://10.30.14.44:8080` | [`swagger-ui`](http://10.30.14.44:8080/swagger-ui/index.html) · [`v3/api-docs`](http://10.30.14.44:8080/v3/api-docs) | Una granada HE daña a todos los jugadores vivos dentro de su radio, aliados incluidos; el daño baja con la distancia y el chaleco lo reduce a la mitad. Toda arma tirada dentro del radio sale despedida en dirección contraria a la explosión, más lejos cuanto más cerca estaba. |
-| A3 | Vanessa Ricciardi | [vricciardi-tallerlp3-2026](https://github.com/luckvani-gif/vricciardi-tallerlp3-2026.git) | `http://100.95.213.93:8081` | [`swagger-ui`](http://100.95.213.93:8081/swagger-ui/index.html) · [`v3/api-docs`](http://100.95.213.93:8081/v3/api-docs) | Disparar consume munición o usa la granada y persiste el resultado; la distancia no puede ser negativa. Recargar pasa munición de la reserva al cargador y persiste el estado; las granadas no se pueden recargar. |
+| A1 | Mauricio Pecci (este servicio) | [MPecci-tplp3-2026 / `feature/rest`](https://github.com/MauricioPecci/MPecci-tplp3-2026/tree/feature/rest) | `https://desktop-hrm8vjo.tailde75e4.ts.net` | [`swagger-ui`](https://desktop-hrm8vjo.tailde75e4.ts.net/swagger-ui/index.html) · [`v3/api-docs`](https://desktop-hrm8vjo.tailde75e4.ts.net/v3/api-docs) | Un arma de fuego dispara a un objetivo, consume munición y reduce su durabilidad; el sobre-daño se clampa y si la durabilidad llega a 0 el arma se destruye. Un arma de fuego recarga munición desde la reserva hasta su capacidad máxima; las granadas no se recargan. |
+| A2 | Ariel Gaona | [agaona-taller-git-2026 / `feature/RESTApi`](https://github.com/ferue/agaona-taller-git-2026/tree/feature/RESTApi) | `http://ariel.tail26e794.ts.net/` | [`swagger-ui`](http://ariel.tail26e794.ts.net/swagger-ui/index.html) · [`v3/api-docs`](http://ariel.tail26e794.ts.net/v3/api-docs) | Una granada HE daña a todos los jugadores vivos dentro de su radio, aliados incluidos; el daño baja con la distancia y el chaleco lo reduce a la mitad. Toda arma tirada dentro del radio sale despedida en dirección contraria a la explosión, más lejos cuanto más cerca estaba. |
+| A3 | Vanessa Ricciardi | [vricciardi-tallerlp3-2026](https://github.com/luckvani-gif/vricciardi-tallerlp3-2026.git) | `http://100.95.213.93:8081` | [`swagger-ui`](http://100.95.213.93:8081/swagger-ui/index.html) · [`v3/api-docs`](http://100.95.213.93:8081/v3/api-docs) | Operación consumida por A1: `GET /api/armas/{tipo}/disparar?distancia=...&veces=...`, que construye un arma temporal del tipo indicado, dispara `veces` veces (`1..100`, por defecto `1`) y responde `arma`, `disparos`, `recarga` y `estadoFinal`; no persiste en su H2. |
 
-El escenario usado es posible en CS2: una granada HE necesita la validación de daño/empuje de A2 y una ráfaga de rifle dentro de `1..100` de A3; recién entonces A1 dispara, daña y recarga en su propia H2.
+URLs publicadas del trío en este README: A1 `https://desktop-hrm8vjo.tailde75e4.ts.net`, A2 `http://ariel.tail26e794.ts.net/` y A3 `http://100.95.213.93:8081`. Estas son las URL de entrega para el mapa del grupo; los README de A2 y A3 deben replicarlas para que el mapa coincida en los tres repositorios. La configuración de clientes y la colección Insomnia no se modificó en este ajuste.
+
+El escenario usado es posible en CS2: una granada HE necesita la validación de daño/empuje de A2 y una ráfaga de `1..100` disparos sobre un arma temporal de A3; recién entonces A1 dispara, daña y recarga en su propia H2.
+
+### Por qué se consume esa operación de A3
+
+Se usa `GET /api/armas/{tipo}/disparar` en lugar de las reglas persistidas `/api/armas/{id}/disparar` y `/api/armas/{id}/recargar` porque expone de forma determinista la sobrecarga de `disparar(distancia)` repetida `veces` veces, sin depender de ids de la H2 de A3 ni modificar su base. Permite además provocar un rechazo ajeno con `veces > 100` (`400`, `veces debe estar entre 1 y 100`). El contrato se tomó del código/OpenAPI de A3; A1 no copia su dominio.
+
+### Orden A2 → A3 → A1
+
+A2 valida primero la HE sin detonarla; A3 ejecuta después una ráfaga sobre un arma temporal, también sin persistir. Recién con ambos `200`, A1 persiste su simulación en `@Transactional`. El orden respeta la dependencia lógica del escenario: primero se confirma el efecto de la granada, luego la ráfaga y al final el registro local. Si A2 rechaza, A3 ni siquiera es llamado.
+
+### Preguntas de POO-09
+
+- **Hecho del juego:** un ataque coordinado con una granada HE y una ráfaga de rifle; A2 valida el daño/empuje de la HE sin detonarla y A3 valida la ráfaga, por lo que recién con ambos `200` A1 registra la jugada.
+- **Cliente:** el jugador inicia la acción; A1 actúa como cliente HTTP de A2 y A3 mediante `WebClient` desde `EscenarioCombateService`.
+- **Errores:** se propaga la excepción de compañero hasta `ApiExceptionHandler`, que la traduce a `400`/`404`/`409` según el código externo y a `502` si falla el transporte; no se copian cuerpos ajenos.
+- **Límite:** solo se reproduce el contrato HTTP leído del OpenAPI de A2/A3. Cada servicio mantiene su dominio, sus DTOs y su base; no hay código ni base compartida.
 
 ### Orden para arrancar los tres servicios
 
