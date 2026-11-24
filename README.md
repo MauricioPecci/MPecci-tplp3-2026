@@ -5,19 +5,6 @@ Servicio HTTP construido con **Spring Boot** (Maven, Java 21, Spring Web + Sprin
 Ejercicios: POO-06/07/08 del taller de Git y Lenguaje de Programación 3 (CYT646).  
 POO-08: <https://github.com/alefq/afq-taller-git-2024/blob/main/docs/ejercicio-poo-08-crud-h2-insomnia-2026-10-28.md>
 
-## Situación de POO-08
-
-La corrección de POO-08 tuvo observaciones y descuentos (**19/24**). Todas están cerradas en este commit; el detalle está en [`docs/correccion-poo8.txt`](docs/correccion-poo8.txt):
-
-| Criterio | Cierre aplicado |
-|---|---|
-| 1. Entrega y arranque (2,5/3) | Colección Insomnia versionada en `docs/insomnia/insomnia-cs2.json` y guía en `docs/insomnia-poo08.md`. |
-| 2. Organización en paquetes (2/3) | Validaciones, reglas y excepciones movidas del dominio a `ArmaService`; las entidades solo guardan estado. |
-| 3. Ocultamiento e invariantes (0/3) | `ArmaService.validar` rechaza perdigón `<= 0`, daño negativo de granada y estados inválidos; constructores vacíos de las hijas reducidos a `protected` para JPA. |
-| 8. Documentación (2,5/3) | Diagrama Mermaid ampliado con `Equipable`, `UIcapable` y la jerarquía completa de excepciones. |
-
-Los criterios 4, 5, 6 y 7 ya tenían puntaje completo y no requirieron cambios.
-
 ## Cómo arrancar
 
 ```bash
@@ -421,9 +408,24 @@ Importar en Insomnia desde **Import/Export → Import Data → From File**. El a
 | A2 | Ariel Gaona | [agaona-taller-git-2026 / `feature/RESTApi`](https://github.com/ferue/agaona-taller-git-2026/tree/feature/RESTApi) | `http://ariel.tail26e794.ts.net/` | [`swagger-ui`](http://ariel.tail26e794.ts.net/swagger-ui/index.html) · [`v3/api-docs`](http://ariel.tail26e794.ts.net/v3/api-docs) | Una granada HE daña a todos los jugadores vivos dentro de su radio, aliados incluidos; el daño baja con la distancia y el chaleco lo reduce a la mitad. Toda arma tirada dentro del radio sale despedida en dirección contraria a la explosión, más lejos cuanto más cerca estaba. |
 | A3 | Vanessa Ricciardi | [vricciardi-tallerlp3-2026](https://github.com/luckvani-gif/vricciardi-tallerlp3-2026.git) | `http://100.95.213.93:8081` | [`swagger-ui`](http://100.95.213.93:8081/swagger-ui/index.html) · [`v3/api-docs`](http://100.95.213.93:8081/v3/api-docs) | Operación consumida por A1: `GET /api/armas/{tipo}/disparar?distancia=...&veces=...`, que construye un arma temporal del tipo indicado, dispara `veces` veces (`1..100`, por defecto `1`) y responde `arma`, `disparos`, `recarga` y `estadoFinal`; no persiste en su H2. |
 
-URLs publicadas del trío en este README: A1 `https://desktop-hrm8vjo.tailde75e4.ts.net`, A2 `http://ariel.tail26e794.ts.net/` y A3 `http://100.95.213.93:8081`. Estas son las URL de entrega para el mapa del grupo; los README de A2 y A3 deben replicarlas para que el mapa coincida en los tres repositorios. La configuración de clientes y la colección Insomnia no se modificó en este ajuste.
+Representación Mermaid del mismo mapa, con el orden real de consumo:
 
-El escenario usado es posible en CS2: una granada HE necesita la validación de daño/empuje de A2 y una ráfaga de `1..100` disparos sobre un arma temporal de A3; recién entonces A1 dispara, daña y recarga en su propia H2.
+```mermaid
+flowchart LR
+    A1["A1 · Mauricio Pecci<br/>este servicio<br/>https://desktop-hrm8vjo.tailde75e4.ts.net"]
+    A2["A2 · Ariel Gaona<br/>validación HE sin detonar<br/>http://ariel.tail26e794.ts.net/"]
+    A3["A3 · Vanessa Ricciardi<br/>ráfaga sobre arma temporal<br/>http://100.95.213.93:8081"]
+    H2[(H2 de A1)]
+
+    A1 -->|"1. POST /api/explosiones/validar"| A2
+    A1 -->|"2. GET /armas/{tipo}/disparar"| A3
+    A1 -->|"3. simulación local"| H2
+```
+
+URLs: A1 `https://desktop-hrm8vjo.tailde75e4.ts.net`, A2 `http://ariel.tail26e794.ts.net/` y A3 `http://100.95.213.93:8081`.
+
+El escenario usado es posible en CS2:
+ una granada HE necesita la validación de daño/empuje de A2 y una ráfaga de `1..100` disparos sobre un arma temporal de A3; recién entonces A1 dispara, daña y recarga en su propia H2.
 
 ### Por qué se consume esa operación de A3
 
@@ -567,8 +569,6 @@ classDiagram
 
 ## Qué hay que pensar (respuestas)
 
-Estas respuestas describen la implementación actual; si el código cambia, deben cambiar con él.
-
 1. **Recurso y verbo.** El sustantivo de la API es `armas` y la colección vive en `/api/armas`. El verbo HTTP expresa la operación: `POST` crea, `GET` lee, `PUT` actualiza y `DELETE` borra. Las acciones que cambian estado se exponen como subrecursos de comando: `POST /api/armas/simulacion`, `POST /api/armas/{id}/dano`, `POST /api/armas/{id}/cargar-municion` y `POST /api/armas/{id}/disparar`.
 
 2. **Identidad.** La clave es `id`, un `int` asignado por JPA/H2 con `@GeneratedValue(strategy = IDENTITY)`. El JSON de creación la omite: el campo es `@JsonProperty(access = READ_ONLY)`. El service además rechaza un `id` distinto de 0 al crear. La persistencia asigna el id y el `POST` lo devuelve en la respuesta.
@@ -588,6 +588,21 @@ Estas respuestas describen la implementación actual; si el código cambia, debe
 9. **Tres clases y simulación.** La simulación `POST /api/armas/simulacion` involucra atacante `ArmaDeFuego`, objetivo `Arma` y recargador `ArmaDeFuego`. El atacante dispara, el objetivo recibe daño y el recargador llena su munición al máximo. La operación es transaccional: si falla una regla, se revierte el estado.
 
 10. **Excepciones.** La base es `ArmaDominioException extends RuntimeException`. Hijas: `ArmaInvalidaException` (estado/entrada/tipo inválido), `DanoInvalidoException` (daño negativo), `CargaMunicionException` (cantidad inválida, sin munición, munición fuera de rango) y `ArmaNoEncontradaException` (recurso inexistente). `ApiExceptionHandler` es un `@RestControllerAdvice` que mapea cada tipo a HTTP/JSON con `tipo`, `error` y `rechazo`. El sobre-daño no es error: se clampa y puede destruir el arma.
+
+## Corrección POO-08
+
+La corrección original fue **19/24**. Todas las observaciones están cerradas; el texto completo está en [`docs/correccion-poo8.txt`](docs/correccion-poo8.txt).
+
+### Observaciones y cierres
+
+| Criterio | Corrección recibida | Cierre aplicado |
+|---|---|---|
+| 1. Entrega y arranque (2,5/3) | La colección de Insomnia no estaba versionada en el commit entregado: el último commit borraba `docs/insomnia-poo08.json` y `docs/insomnia-poo08.md`. | La colección quedó integrada en `docs/insomnia/insomnia-cs2.json` (workspaces POO-08 y POO-09) y la guía en `docs/insomnia-poo08.md`. |
+| 2. Organización en paquetes (2/3) | El dominio lanzaba excepciones y contenía reglas de negocio; esas responsabilidades corresponden a la capa `service`. | Las validaciones, reglas y lanzamientos viven en `ArmaService.validar(...)`; las entidades solo guardan estado encapsulado y ningún controller usa `ArmaRepository` directamente. |
+| 3. Ocultamiento e invariantes (0/3) | Se persistían escopetas con perdigón negativo y granadas con daño negativo, y los constructores vacíos de las hijas eran públicos. | `ArmaService.validar(...)` rechaza perdigón `<= 0`, dispersión negativa, daño explosivo negativo y estados inválidos; los constructores vacíos exigidos por JPA son `protected` en todas las hijas. |
+| 8. Documentación (2,5/3) | El diagrama Mermaid no mostraba `Equipable`, `UIcapable` ni las hijas de `ArmaDominioException`. | El diagrama “Diagrama (resumen POO-08)” incluye ambas interfaces, quién las implementa y las cuatro hijas de la jerarquía de excepciones con sus handlers. |
+
+Los criterios 4, 5, 6 y 7 ya tenían `3/3`: herencia `SINGLE_TABLE` con `@MappedSuperclass`, constructores sobrecargados, comportamiento observable verificado en Insomnia y commits semánticos.
 
 ## Estructura
 
