@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -69,6 +70,20 @@ public class ApiExceptionHandler {
         body.put("error", e.getMessage());
         body.put("rechazo", "regla de dominio violada");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> persistenciaInvalida(DataIntegrityViolationException e) {
+        String mensaje = String.valueOf(e.getMostSpecificCause().getMessage());
+        boolean baseCerrada = mensaje.toLowerCase().contains("base de datos ha sido cerrada")
+                || mensaje.toLowerCase().contains("database has been closed");
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tipo", baseCerrada ? "BASE_DATOS_NO_DISPONIBLE" : "PERSISTENCIA_INVALIDA");
+        body.put("error", mensaje);
+        body.put("rechazo", baseCerrada
+                ? "la base de datos dejó de estar disponible"
+                : "el registro viola una restricción de integridad");
+        return ResponseEntity.status(baseCerrada ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.CONFLICT).body(body);
     }
 
     @ExceptionHandler(ValidacionCompaneroRechazadaException.class)

@@ -20,14 +20,14 @@ Servicio: `http://localhost:8080`. Pruebas:
 ## H2 y persistencia (desarrollo)
 
 Configuración en `src/main/resources/application.properties`:
-- `spring.datasource.url=jdbc:h2:mem:armasdb` — base H2 en memoria para desarrollo.
+- `spring.datasource.url=jdbc:h2:mem:armasdb;DB_CLOSE_DELAY=-1` — base H2 en memoria para desarrollo; el sufijo evita que se cierre al quedar sin conexiones.
 - `spring.datasource.username=sa` / `spring.datasource.password=` — credenciales por defecto.
 - `spring.h2.console.enabled=true` y `spring.h2.console.path=/h2-console` — consola web para inspeccionar tablas.
 - `spring.jpa.hibernate.ddl-auto=update` — Hibernate crea/actualiza el esquema al arrancar.
 - `spring.jpa.show-sql=true` — muestra SQL para depuración.
 - `spring.jackson.deserialization.fail-on-unknown-properties=true` — rechaza propiedades JSON desconocidas.
 
-Consola H2: `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:mem:armasdb`, usuario `sa`). La base es en memoria: al reiniciar se pierden los datos y los ids vuelven a empezar.
+Consola H2: `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:mem:armasdb;DB_CLOSE_DELAY=-1`, usuario `sa`). La base es en memoria: al reiniciar se pierden los datos y los ids vuelven a empezar.
 
 ## Modelo persistido: la jerarquía del dominio es la jerarquía JPA
 
